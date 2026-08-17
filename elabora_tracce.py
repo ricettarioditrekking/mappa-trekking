@@ -3,10 +3,10 @@ import glob
 import json
 import math
 import xml.etree.ElementTree as ET
+from datetime import datetime
 
 
 def haversine(lat1, lon1, lat2, lon2):
-    """Calculates horizontal distance between two coordinates in kilometers."""
     R = 6371.0
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
@@ -21,10 +21,6 @@ def haversine(lat1, lon1, lat2, lon2):
 
 
 def calcola_dislivelli_wikiloc(elevations, window_size=9):
-    """
-    Smooths raw GPX elevation data with a moving average filter
-    and returns both total elevation gain (+) and total elevation loss (-).
-    """
     clean_ele = [float(e) for e in elevations if e is not None]
     if len(clean_ele) < window_size:
         return 0, 0
@@ -33,15 +29,12 @@ def calcola_dislivelli_wikiloc(elevations, window_size=9):
     half_window = window_size // 2
     n = len(clean_ele)
 
-    # 1. Apply moving average filter
     for i in range(n):
         start = max(0, i - half_window)
         end = min(n, i + half_window + 1)
         smoothed_ele.append(sum(clean_ele[start:end]) / (end - start))
 
-    # 2. Accumulate positive gains and negative losses
-    gain = 0.0
-    loss = 0.0
+    gain, loss = 0.0, 0.0
     for i in range(1, len(smoothed_ele)):
         diff = smoothed_ele[i] - smoothed_ele[i - 1]
         if diff > 0:
@@ -53,26 +46,26 @@ def calcola_dislivelli_wikiloc(elevations, window_size=9):
 
 
 def processa_gpx(file_path):
-    """Parses a single GPX file and returns a GeoJSON Feature."""
     tree = ET.parse(file_path)
     root = tree.getroot()
 
     coords = []
     elevations = []
+    timestamps = []
     total_dist_km = 0.0
-
     last_lat, last_lon = None, None
 
     for trkpt in root.findall('.//{*}trkpt'):
         lat = float(trkpt.attrib['lat'])
         lon = float(trkpt.attrib['lon'])
-
         coords.append([lon, lat])
 
+        # Track Distance
         if last_lat is not None and last_lon is not None:
             total_dist_km += haversine(last_lat, last_lon, lat, lon)
         last_lat, last_lon = lat, lon
 
+        # Track Elevation
         ele_elem = trkpt.find('{*}ele')
         if ele_elem is not None and ele_elem.text:
             try:
@@ -80,12 +73,44 @@ def processa_gpx(file_path):
             except ValueError:
                 pass
 
+        # Track Timestamps
+        time_elem = trkpt.find('{*}time')
+        if time_elem is not None and time_elem.text:
+            try:
+                ts = time_elem.text.strip().replace('Z', '+00:00')
+                timestamps.append(datetime.fromisoformat(ts))
+            except ValueError:
+                pass
+
     km = round(total_dist_km, 1)
     dislivello_pos, dislivello_neg = calcola_dislivelli_wikiloc(elevations, window_size=9)
 
-    durata = "Mezza Giornata" if km <= 10 else "Giornata Intera"
+    # 1. Calculate Real Duration from GPX Timestamps
+    if len(timestamps) >= 2:
+        elapsed = timestamps[-1] - timestamps[0]
+        total_minutes = int(elapsed.total_seconds() / 60)
+        hours = total_minutes // 60
+        minutes = total_minutes % 60
+        tempo_testo = f"{hours}h {minutes:02d}m"
+        durata_cat = "Mezza Giornata" if total_minutes <= 240 else "Giornata Intera"
+    else:
+        # Fallback estimation if time tags are missing
+        est_hours = (km / 4.0) + (dislivello_pos / 400.0) #https://en.wikipedia.org/wiki/Naismith%27s_rule
+        tempo_testo = f"~{round(est_hours, 1)} ore"
+        durata_cat = "Mezza Giornata" if est_hours <= 4.0 else "Giornata Intera"
 
-    # Extract trail name
+    # 2. Difficulty Score (CAI Index) #https://en.wikipedia.org/wiki/Naismith%27s_rule
+    effort_score = km + (dislivello_pos / 100.0)
+    if effort_score < 12:
+        difficolta = "Facile"
+    elif effort_score <= 22:
+        difficolta = "Media"
+    elif effort_score <= 32:
+        difficolta = "Difficile"
+    else:
+        difficolta = "Molto Difficile"
+
+    # 3. Extract Metadata
     name_elem = root.find('.//{*}trk/{*}name')
     if name_elem is not None and name_elem.text:
         track_name = name_elem.text.strip()
@@ -93,25 +118,11 @@ def processa_gpx(file_path):
         base = os.path.basename(file_path)
         track_name = os.path.splitext(base)[0].replace('_', ' ').replace('-', ' ').title()
 
-    # Extract Wikiloc link from GPX metadata
     wikiloc_link = None
     link_elem = root.find('.//{*}link')
     if link_elem is not None and 'href' in link_elem.attrib:
         wikiloc_link = link_elem.attrib['href']
 
-    # Calculate CAI Effort Index (Indice di Sforzo)
-    effort_score = km + (dislivello_pos / 100.0)
-
-    # Classify difficulty based on total effort
-    if effort_score < 8:
-        difficolta = "Facile"          # e.g., 6 km + 300m gain = 9
-    elif effort_score <= 20:
-        difficolta = "Media"           # e.g., 12 km + 600m gain = 18
-    elif effort_score <= 30:
-        difficolta = "Difficile"       # e.g., 16 km + 1000m gain = 26
-    else:
-        difficolta = "Molto Difficile" # e.g., 20 km + 1400m gain = 34
-        
     return {
         "type": "Feature",
         "properties": {
@@ -120,7 +131,8 @@ def processa_gpx(file_path):
             "dislivello": dislivello_pos,
             "dislivello_neg": dislivello_neg,
             "difficolta": difficolta,
-            "durata": durata,
+            "durata": durata_cat,
+            "tempo_effettivo": tempo_testo,
             "link": wikiloc_link
         },
         "geometry": {
@@ -132,30 +144,16 @@ def processa_gpx(file_path):
 
 def main():
     gpx_files = glob.glob('**/*.gpx', recursive=True)
-
     if not gpx_files:
-        print("No .gpx files found in repository!")
+        print("No .gpx files found!")
         return
 
-    features = []
-    for filepath in gpx_files:
-        try:
-            feature = processa_gpx(filepath)
-            features.append(feature)
-            p = feature['properties']
-            print(f"Processed: {filepath} -> {p['name']} (+{p['dislivello']}m / -{p['dislivello_neg']}m)")
-        except Exception as e:
-            print(f"Error processing {filepath}: {e}")
-
-    geojson_data = {
-        "type": "FeatureCollection",
-        "features": features,
-    }
-
+    features = [processa_gpx(f) for f in gpx_files]
+    
     with open("percorsi.geojson", "w", encoding="utf-8") as f:
-        json.dump(geojson_data, f, ensure_ascii=False, indent=2)
+        json.dump({"type": "FeatureCollection", "features": features}, f, ensure_ascii=False, indent=2)
 
-    print(f"Successfully updated percorsi.geojson with {len(features)} tracks.")
+    print(f"Generated percorsi.geojson for {len(features)} tracks.")
 
 
 if __name__ == "__main__":
