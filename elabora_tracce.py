@@ -83,7 +83,6 @@ def processa_gpx(file_path):
     km = round(total_dist_km, 1)
     dislivello_pos, dislivello_neg = calcola_dislivelli_wikiloc(elevations, window_size=9)
 
-    # Assign difficulty category based on positive elevation gain
     if dislivello_pos < 400:
         difficolta = "Facile"
     elif dislivello_pos <= 800:
@@ -93,12 +92,19 @@ def processa_gpx(file_path):
 
     durata = "Mezza Giornata" if km <= 10 else "Giornata Intera"
 
+    # Extract trail name
     name_elem = root.find('.//{*}trk/{*}name')
     if name_elem is not None and name_elem.text:
         track_name = name_elem.text.strip()
     else:
         base = os.path.basename(file_path)
         track_name = os.path.splitext(base)[0].replace('_', ' ').replace('-', ' ').title()
+
+    # Extract Wikiloc link from GPX metadata
+    wikiloc_link = None
+    link_elem = root.find('.//{*}link')
+    if link_elem is not None and 'href' in link_elem.attrib:
+        wikiloc_link = link_elem.attrib['href']
 
     return {
         "type": "Feature",
@@ -109,6 +115,7 @@ def processa_gpx(file_path):
             "dislivello_neg": dislivello_neg,
             "difficolta": difficolta,
             "durata": durata,
+            "link": wikiloc_link
         },
         "geometry": {
             "type": "LineString",
