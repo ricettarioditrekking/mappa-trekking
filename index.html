@@ -186,13 +186,21 @@ if (feature.properties.dislivello > 800) lineCol = "red";
 return { color: lineCol, weight: 4, opacity: 0.8 };
 },
 onEachFeature: function(feature, layer) {
-const p = feature.properties;
-const dislivelloNeg = p.dislivello_neg !== undefined ? p.dislivello_neg : 0;
+  const p = feature.properties;
+  const dislivelloNeg = p.dislivello_neg !== undefined ? p.dislivello_neg : 0;
+  
+  // Format the Wikiloc link button
+  const linkHtml = p.link 
+    ? '<br><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 5px;">Vedi su Wikiloc ↗</a>' 
+    : '';
 
-layer.bindPopup('<strong>' + p.name + '</strong><br>' +
-'Distanza: ' + p.km + ' km<br>' +
-'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
-'Durata: ' + p.durata);
+  layer.bindPopup(
+    '<strong>' + p.name + '</strong><br>' +
+    'Distanza: ' + p.km + ' km<br>' +
+    'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
+    'Durata: ' + p.durata + 
+    linkHtml
+  );
 }
 }).addTo(map);
 
