@@ -83,13 +83,6 @@ def processa_gpx(file_path):
     km = round(total_dist_km, 1)
     dislivello_pos, dislivello_neg = calcola_dislivelli_wikiloc(elevations, window_size=9)
 
-    if dislivello_pos < 400:
-        difficolta = "Facile"
-    elif dislivello_pos <= 800:
-        difficolta = "Media"
-    else:
-        difficolta = "Difficile"
-
     durata = "Mezza Giornata" if km <= 10 else "Giornata Intera"
 
     # Extract trail name
@@ -106,6 +99,19 @@ def processa_gpx(file_path):
     if link_elem is not None and 'href' in link_elem.attrib:
         wikiloc_link = link_elem.attrib['href']
 
+    # Calculate CAI Effort Index (Indice di Sforzo)
+    effort_score = km + (dislivello_pos / 100.0)
+
+    # Classify difficulty based on total effort
+    if effort_score < 8:
+        difficolta = "Facile"          # e.g., 6 km + 300m gain = 9
+    elif effort_score <= 20:
+        difficolta = "Media"           # e.g., 12 km + 600m gain = 18
+    elif effort_score <= 30:
+        difficolta = "Difficile"       # e.g., 16 km + 1000m gain = 26
+    else:
+        difficolta = "Molto Difficile" # e.g., 20 km + 1400m gain = 34
+        
     return {
         "type": "Feature",
         "properties": {
