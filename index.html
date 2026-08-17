@@ -204,16 +204,21 @@ onEachFeature: function(feature, layer) {
 const p = feature.properties;
 const dislivelloNeg = p.dislivello_neg !== undefined ? p.dislivello_neg : 0;
 const tempoStr = p.tempo_effettivo ? p.tempo_effettivo : p.durata;
-const sforzoVal = (p.sforzo !== undefined && p.sforzo !== null) ? Number(p.sforzo).toFixed(1) : null;
-const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
+// Format Effort Index safely
+  let sforzoStr = '';
+  if (p.sforzo !== undefined && p.sforzo !== null && !isNaN(p.sforzo)) {
+    sforzoStr = ' (' + Number(p.sforzo).toFixed(1) + ')';
+  }
+
+  // Format Thumbnail Image safely
+  let imgHtml = '';
+  if (p.image_url) {
+    imgHtml = '<br><img src="' + p.image_url + '" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; margin-top:6px;">';
+  }
 
 const linkHtml = p.link 
   ? '<br><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 5px;">Vedi su Wikiloc ↗</a>' 
   : '';
-    
-const imgHtml = p.image_url 
-    ? '<br><img src="' + p.image_url + '" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; margin-top:6px;">' 
-    : '';
     
 layer.bindPopup('<strong>' + p.name + '</strong><br>' +
 'Distanza: ' + p.km + ' km<br>' +
