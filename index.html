@@ -204,11 +204,11 @@ onEachFeature: function(feature, layer) {
 const p = feature.properties;
 const dislivelloNeg = p.dislivello_neg !== undefined ? p.dislivello_neg : 0;
 const tempoStr = p.tempo_effettivo ? p.tempo_effettivo : p.durata;
-// Format Effort Index safely
-  let sforzoStr = '';
-  if (p.sforzo !== undefined && p.sforzo !== null && !isNaN(p.sforzo)) {
-    sforzoStr = ' (' + Number(p.sforzo).toFixed(1) + ')';
-  }
+const sforzoVal = (p.sforzo !== undefined && p.sforzo !== null && !isNaN(p.sforzo)) 
+  ? Number(p.sforzo).toFixed(1) 
+  : null;
+
+const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
 
   // Format Thumbnail Image safely
   let imgHtml = '';
