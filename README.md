@@ -36,7 +36,7 @@ An interactive topographic map built with Leaflet.js and Python for displaying o
 Everything is fully automated via GitHub Actions—no need to run Python scripts or terminal commands manually!
 
 ### 1. Prepare your Files
-1. **GPX File:** Export your `.gpx` track file.
+1. **GPX File:** Export your `.gpx` track file from the device or download it from Wikiloc or similar websites or apps.
 2. **Photo (Optional):** Choose a cover photo for the trail popup (`.jpg`, `.jpeg`, or `.png`).
 3. **Matching Names:** Make sure both files share the **exact same name**:
    * `tracce/passo-oclini.gpx`
