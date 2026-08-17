@@ -2,8 +2,6 @@ import os
 import glob
 import json
 import math
-import re
-import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
@@ -45,43 +43,6 @@ def calcola_dislivelli_wikiloc(elevations, window_size=9):
             loss += abs(diff)
 
     return int(round(gain)), int(round(loss))
-
-
-def estrai_immagine_wikiloc(url):
-    """Scrapes trail thumbnail from Wikiloc, handling meta tag order variations."""
-    if not url or "wikiloc.com" not in url:
-        return None
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-            'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7',
-            'Cache-Control': 'no-cache',
-        }
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=6) as response:
-            html = response.read().decode('utf-8', errors='ignore')
-
-            # Patterns covering property/content in any order, plus twitter:image fallbacks
-            patterns = [
-                r'<meta\s+[^>]*?property=["\']og:image["\']\s+[^>]*?content=["\']([^"\']+)["\']',
-                r'<meta\s+[^>]*?content=["\']([^"\']+)["\']\s+[^>]*?property=["\']og:image["\']',
-                r'<meta\s+[^>]*?name=["\']twitter:image["\']\s+[^>]*?content=["\']([^"\']+)["\']',
-                r'<meta\s+[^>]*?content=["\']([^"\']+)["\']\s+[^>]*?name=["\']twitter:image["\']'
-            ]
-
-            for pattern in patterns:
-                match = re.search(pattern, html, re.IGNORECASE)
-                if match:
-                    img_url = match.group(1)
-                    # Convert protocol-relative URLs (//s1.wikiloc.com/...) to standard https
-                    if img_url.startswith('//'):
-                        img_url = 'https:' + img_url
-                    return img_url
-
-    except Exception as e:
-        print(f"Skipping image for {url}: {e}")
-    return None
 
 
 def processa_gpx(file_path):
@@ -156,7 +117,15 @@ def processa_gpx(file_path):
     if link_elem is not None and 'href' in link_elem.attrib:
         wikiloc_link = link_elem.attrib['href']
 
-    image_url = estrai_immagine_wikiloc(wikiloc_link)
+    # Check for same-named local image file
+    base_path = os.path.splitext(file_path)[0]
+    image_url = None
+
+    for ext in ['.jpg', '.jpeg', '.png', '.JPG', '.JPEG', '.PNG']:
+        candidate = base_path + ext
+        if os.path.exists(candidate):
+            image_url = candidate.replace('\\', '/')
+            break
 
     return {
         "type": "Feature",
