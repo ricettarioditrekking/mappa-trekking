@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 
 def haversine(lat1, lon1, lat2, lon2):
     """Calculates horizontal distance between two coordinates in kilometers."""
-    R = 6371.0  # Earth radius in km
+    R = 6371.0
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
     a = (
@@ -20,14 +20,14 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * c
 
 
-def calcola_dislivello_wikiloc(elevations, window_size=9):
+def calcola_dislivelli_wikiloc(elevations, window_size=9):
     """
     Smooths raw GPX elevation data with a moving average filter
-    to remove GPS vertical noise, matching Wikiloc's display total.
+    and returns both total elevation gain (+) and total elevation loss (-).
     """
     clean_ele = [float(e) for e in elevations if e is not None]
     if len(clean_ele) < window_size:
-        return 0
+        return 0, 0
 
     smoothed_ele = []
     half_window = window_size // 2
@@ -39,14 +39,17 @@ def calcola_dislivello_wikiloc(elevations, window_size=9):
         end = min(n, i + half_window + 1)
         smoothed_ele.append(sum(clean_ele[start:end]) / (end - start))
 
-    # 2. Accumulate positive elevation gains
-    dislivello = 0.0
+    # 2. Accumulate positive gains and negative losses
+    gain = 0.0
+    loss = 0.0
     for i in range(1, len(smoothed_ele)):
         diff = smoothed_ele[i] - smoothed_ele[i - 1]
         if diff > 0:
-            dislivello += diff
+            gain += diff
+        elif diff < 0:
+            loss += abs(diff)
 
-    return int(round(dislivello))
+    return int(round(gain)), int(round(loss))
 
 
 def processa_gpx(file_path):
@@ -54,25 +57,22 @@ def processa_gpx(file_path):
     tree = ET.parse(file_path)
     root = tree.getroot()
 
-    coords = []  # GeoJSON format: [longitude, latitude]
+    coords = []
     elevations = []
     total_dist_km = 0.0
 
     last_lat, last_lon = None, None
 
-    # Parse all track points safely, ignoring waypoints
     for trkpt in root.findall('.//{*}trkpt'):
         lat = float(trkpt.attrib['lat'])
         lon = float(trkpt.attrib['lon'])
 
         coords.append([lon, lat])
 
-        # Distance calculation
         if last_lat is not None and last_lon is not None:
             total_dist_km += haversine(last_lat, last_lon, lat, lon)
         last_lat, last_lon = lat, lon
 
-        # Elevation extraction
         ele_elem = trkpt.find('{*}ele')
         if ele_elem is not None and ele_elem.text:
             try:
@@ -81,20 +81,18 @@ def processa_gpx(file_path):
                 pass
 
     km = round(total_dist_km, 1)
-    dislivello = calcola_dislivello_wikiloc(elevations, window_size=9)
+    dislivello_pos, dislivello_neg = calcola_dislivelli_wikiloc(elevations, window_size=9)
 
-    # Assign difficulty category
-    if dislivello < 400:
+    # Assign difficulty category based on positive elevation gain
+    if dislivello_pos < 400:
         difficolta = "Facile"
-    elif dislivello <= 800:
+    elif dislivello_pos <= 800:
         difficolta = "Media"
     else:
         difficolta = "Difficile"
 
-    # Assign duration category
     durata = "Mezza Giornata" if km <= 10 else "Giornata Intera"
 
-    # Extract trail name from GPX metadata or fallback to file name
     name_elem = root.find('.//{*}trk/{*}name')
     if name_elem is not None and name_elem.text:
         track_name = name_elem.text.strip()
@@ -107,7 +105,8 @@ def processa_gpx(file_path):
         "properties": {
             "name": track_name,
             "km": km,
-            "dislivello": dislivello,
+            "dislivello": dislivello_pos,
+            "dislivello_neg": dislivello_neg,
             "difficolta": difficolta,
             "durata": durata,
         },
@@ -119,7 +118,6 @@ def processa_gpx(file_path):
 
 
 def main():
-    # Find all GPX files recursively in the repository
     gpx_files = glob.glob('**/*.gpx', recursive=True)
 
     if not gpx_files:
@@ -131,7 +129,8 @@ def main():
         try:
             feature = processa_gpx(filepath)
             features.append(feature)
-            print(f"Processed: {filepath} -> {feature['properties']['name']} ({feature['properties']['dislivello']}m gain)")
+            p = feature['properties']
+            print(f"Processed: {filepath} -> {p['name']} (+{p['dislivello']}m / -{p['dislivello_neg']}m)")
         except Exception as e:
             print(f"Error processing {filepath}: {e}")
 
@@ -140,11 +139,10 @@ def main():
         "features": features,
     }
 
-    output_filename = "percorsi.geojson"
-    with open(output_filename, "w", encoding="utf-8") as f:
+    with open("percorsi.geojson", "w", encoding="utf-8") as f:
         json.dump(geojson_data, f, ensure_ascii=False, indent=2)
 
-    print(f"Successfully generated {output_filename} with {len(features)} tracks.")
+    print(f"Successfully updated percorsi.geojson with {len(features)} tracks.")
 
 
 if __name__ == "__main__":
