@@ -1,258 +1,140 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mappa Trekking Automatica ed Ultra-Leggera</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mappa Percorsi GPX</title>
 
-<!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-<style>
-body { font-family: sans-serif; margin: 0; display: flex; height: 100vh; }
-#sidebar { width: 320px; padding: 20px; background: #f4f4f4; z-index: 1000; box-shadow: 2px 0 5px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
-#map { flex-grow: 1; height: 100%; }
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: Arial, sans-serif;
+    }
 
-.filter-group { display: flex; flex-direction: column; gap: 6px; }
-.filter-title { font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; }
-.range-values { font-weight: normal; color: #2c3e50; }
+    #map {
+      height: 100%;
+      width: 100%;
+    }
 
-.dual-slider { display: flex; flex-direction: column; gap: 4px; }
-.slider-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666; }
-.slider-row input[type="range"] { flex-grow: 1; margin: 0; }
-
-select { width: 100%; padding: 6px; box-sizing: border-box; border-radius: 4px; border: 1px solid #ccc; }
-#counter { font-size: 13px; color: #555; font-style: italic; }
-</style>
+    /* Soft neon glow effect on map tracks */
+    .leaflet-interactive {
+      filter: drop-shadow(0px 0px 3px currentColor);
+    }
+  </style>
 </head>
 <body>
 
-<div id="sidebar">
-<h3 style="margin: 0 0 5px 0;">Filtri Percorsi</h3>
+  <div id="map"></div>
 
-<!-- Difficoltà -->
-<div class="filter-group">
-<label class="filter-title" for="difficolta">Difficoltà:</label>
-<select id="difficolta" onchange="applicaFiltri()">
-<option value="tutte">Tutte</option>
-<option value="Facile">Facile (Sforzo Basso)</option>
-<option value="Media">Media (Sforzo Moderato)</option>
-<option value="Difficile">Difficile (Impegnativo)</option>
-<option value="Molto Difficile">Molto Difficile (Esperti)</option>
-</select>
-</div>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Distanza (Km) Range -->
-<div class="filter-group">
-<div class="filter-title">
-<span>Distanza (Km):</span>
-<span class="range-values" id="km-val">0 - 30 km</span>
-</div>
-<div class="dual-slider">
-<div class="slider-row">
-<span>Min:</span>
-<input type="range" id="km-min" min="0" max="50" value="0" oninput="aggiornaFiltri()">
-</div>
-<div class="slider-row">
-<span>Max:</span>
-<input type="range" id="km-max" min="0" max="50" value="30" oninput="aggiornaFiltri()">
-</div>
-</div>
-</div>
+  <script>
+    // 1. Initialize Map
+    const map = L.map('map').setView([46.4983, 11.3548], 10);
 
-<!-- Dislivello Positivo (+) Range -->
-<div class="filter-group">
-<div class="filter-title">
-<span>Dislivello + (m):</span>
-<span class="range-values" id="pos-val">0 - 1500 m</span>
-</div>
-<div class="dual-slider">
-<div class="slider-row">
-<span>Min:</span>
-<input type="range" id="pos-min" min="0" max="2000" step="50" value="0" oninput="aggiornaFiltri()">
-</div>
-<div class="slider-row">
-<span>Max:</span>
-<input type="range" id="pos-max" min="0" max="2000" step="50" value="1500" oninput="aggiornaFiltri()">
-</div>
-</div>
-</div>
+    // 2. Add OpenStreetMap Tile Layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
 
-<!-- Dislivello Negativo (-) Range -->
-<div class="filter-group">
-<div class="filter-title">
-<span>Dislivello - (m):</span>
-<span class="range-values" id="neg-val">0 - 1500 m</span>
-</div>
-<div class="dual-slider">
-<div class="slider-row">
-<span>Min:</span>
-<input type="range" id="neg-min" min="0" max="2000" step="50" value="0" oninput="aggiornaFiltri()">
-</div>
-<div class="slider-row">
-<span>Max:</span>
-<input type="range" id="neg-max" min="0" max="2000" step="50" value="1500" oninput="aggiornaFiltri()">
-</div>
-</div>
-</div>
-
-<!-- Durata -->
-<div class="filter-group">
-<label class="filter-title" for="durata">Categoria Durata:</label>
-<select id="durata" onchange="applicaFiltri()">
-<option value="tutte">Tutte</option>
-<option value="Mezza Giornata">Mezza Giornata (≤ 4 ore)</option>
-<option value="Giornata Intera">Giornata Intera (> 4 ore)</option>
-</select>
-</div>
-
-<hr style="width: 100%; margin: 5px 0; border: 0; border-top: 1px solid #ccc;">
-<div id="counter">Caricamento tracciati...</div>
-</div>
-
-<div id="map"></div>
-
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script>
-const map = L.map('map').setView([42.21, 12.41], 11);
-
-L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-maxZoom: 17,
-attribution: 'Map data: © OpenStreetMap'
-}).addTo(map);
-
-let geojsonLayer;
-let masterTrailsData = null;
-
-fetch('percorsi.geojson?v=' + new Date().getTime())
-.then(response => response.json())
-.then(data => {
-masterTrailsData = data;
-aggiornaFiltri();
-})
-.catch(err => {
-document.getElementById('counter').innerText = "Errore caricamento GeoJSON.";
-console.error("GeoJSON load error:", err);
-});
-
-function aggiornaFiltri() {
-let kmMin = parseInt(document.getElementById('km-min').value);
-let kmMax = parseInt(document.getElementById('km-max').value);
-if (kmMin > kmMax) { kmMin = kmMax; document.getElementById('km-min').value = kmMin; }
-
-let posMin = parseInt(document.getElementById('pos-min').value);
-let posMax = parseInt(document.getElementById('pos-max').value);
-if (posMin > posMax) { posMin = posMax; document.getElementById('pos-min').value = posMin; }
-
-let negMin = parseInt(document.getElementById('neg-min').value);
-let negMax = parseInt(document.getElementById('neg-max').value);
-if (negMin > negMax) { negMin = negMax; document.getElementById('neg-min').value = negMin; }
-
-document.getElementById('km-val').innerText = kmMin + ' - ' + kmMax + ' km';
-document.getElementById('pos-val').innerText = posMin + ' - ' + posMax + ' m';
-document.getElementById('neg-val').innerText = negMin + ' - ' + negMax + ' m';
-
-applicaFiltri();
-}
-
-function applicaFiltri() {
-if (!masterTrailsData) return;
-
-if (geojsonLayer) { map.removeLayer(geojsonLayer); }
-
-const diffSelezionata = document.getElementById('difficolta').value;
-
-const kmMin = parseInt(document.getElementById('km-min').value);
-const kmMax = parseInt(document.getElementById('km-max').value);
-
-const posMin = parseInt(document.getElementById('pos-min').value);
-const posMax = parseInt(document.getElementById('pos-max').value);
-
-const negMin = parseInt(document.getElementById('neg-min').value);
-const negMax = parseInt(document.getElementById('neg-max').value);
-
-const durataSelezionata = document.getElementById('durata').value;
-
-let visibleCount = 0;
-
-geojsonLayer = L.geoJSON(masterTrailsData, {
-filter: function(feature) {
-const p = feature.properties;
-const dislivelloNeg = p.dislivello_neg !== undefined ? p.dislivello_neg : 0;
-
-const rispettaDiff = (diffSelezionata === "tutte" || p.difficolta === diffSelezionata);
-const rispettaKm = (p.km >= kmMin && p.km <= kmMax);
-const rispettaPos = (p.dislivello >= posMin && p.dislivello <= posMax);
-const rispettaNeg = (dislivelloNeg >= negMin && dislivelloNeg <= negMax);
-const rispettaDurata = (durataSelezionata === "tutte" || p.durata === durataSelezionata);
-
-const isMatch = rispettaDiff && rispettaKm && rispettaPos && rispettaNeg && rispettaDurata;
-if (isMatch) visibleCount++;
-return isMatch;
-},
-style: function(feature) {
-let lineCol = "green";
-const diff = feature.properties.difficolta;
-if (diff === "Media") lineCol = "orange";
-if (diff === "Difficile") lineCol = "red";
-if (diff === "Molto Difficile") lineCol = "purple";
-return { color: lineCol, weight: 4, opacity: 0.8 };
-},
-onEachFeature: function(feature, layer) {
-  const p = feature.properties;
-  
-  const dislivelloNeg = (p.dislivello_neg !== undefined && p.dislivello_neg !== null) ? p.dislivello_neg : 0;
-  const tempoStr = p.tempo_effettivo || p.durata || '';
-
-  const sforzoVal = (p.sforzo !== undefined && p.sforzo !== null && !isNaN(p.sforzo)) 
-    ? Number(p.sforzo).toFixed(1) 
-    : null;
-  const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
-
-  let imgHtml = '';
-  if (p.image_url) {
-    imgHtml = '<br><img src="' + p.image_url + '" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; margin-top:6px;">';
-  }
-
-  let linkHtml = '';
-  if (p.link) {
-    linkHtml = '<br><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 5px;">Vedi su Wikiloc ↗</a>';
-  }
-
-  const popupContent = 
-    '<strong>' + p.name + '</strong><br>' +
-    'Distanza: ' + p.km + ' km<br>' +
-    'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
-    'Tempo registrato: ' + tempoStr + '<br>' +
-    'Difficoltà: ' + p.difficolta + sforzoStr +
-    imgHtml +
-    linkHtml;
-
-  // Bind the standard click popup (required for mobile tap)
-  layer.bindPopup(popupContent);
-
-  // Add hover behavior for desktop devices
-  layer.on({
-    mouseover: function(e) {
-      // Only trigger on mouse hover, ignore mobile touch events
-      if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
-        this.openPopup();
-      }
-    },
-    mouseout: function(e) {
-      // Only close on mouse leave, ignore mobile touch events
-      if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
-        this.closePopup();
+    // 3. Neon Color Mapping
+    function getNeonColor(difficolta) {
+      switch (difficolta) {
+        case 'Facile':
+          return '#00FF66'; // Electric Neon Green
+        case 'Media':
+          return '#00E5FF'; // Bright Cyan
+        case 'Difficile':
+          return '#FF5F00'; // Vivid Neon Orange
+        case 'Molto Difficile':
+          return '#FF007F'; // Hot Pink / Magenta
+        default:
+          return '#00FF66';
       }
     }
-  });
-}
-}).addTo(map);
 
-document.getElementById('counter').innerText = 'Mostrati: ' + visibleCount + ' di ' + masterTrailsData.features.length + ' percorsi';
-}
-</script>
+    // 4. Feature Popup and Interaction Behavior
+    function onEachFeature(feature, layer) {
+      const p = feature.properties;
+      
+      const dislivelloNeg = (p.dislivello_neg !== undefined && p.dislivello_neg !== null) ? p.dislivello_neg : 0;
+      const tempoStr = p.tempo_effettivo || p.durata || '';
+
+      const sforzoVal = (p.sforzo !== undefined && p.sforzo !== null && !isNaN(p.sforzo)) 
+        ? Number(p.sforzo).toFixed(1) 
+        : null;
+      const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
+
+      // Local image support
+      let imgHtml = '';
+      if (p.image_url) {
+        imgHtml = '<br><img src="' + p.image_url + '" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; margin-top:6px;">';
+      }
+
+      // Wikiloc link support
+      let linkHtml = '';
+      if (p.link) {
+        linkHtml = '<br><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 5px;">Vedi su Wikiloc ↗</a>';
+      }
+
+      const popupContent = 
+        '<strong>' + p.name + '</strong><br>' +
+        'Distanza: ' + p.km + ' km<br>' +
+        'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
+        'Tempo registrato: ' + tempoStr + '<br>' +
+        'Difficoltà: ' + p.difficolta + sforzoStr +
+        imgHtml +
+        linkHtml;
+
+      // Bind click popup (needed for mobile tap)
+      layer.bindPopup(popupContent);
+
+      // Desktop mouseover/mouseout (ignores mobile touch events)
+      layer.on({
+        mouseover: function(e) {
+          if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
+            this.openPopup();
+          }
+        },
+        mouseout: function(e) {
+          if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
+            this.closePopup();
+          }
+        }
+      });
+    }
+
+    // 5. Fetch GeoJSON and Render
+    fetch('percorsi.geojson?v=' + new Date().getTime())
+      .then(response => response.json())
+      .then(data => {
+        const geoJsonLayer = L.geoJSON(data, {
+          style: function(feature) {
+            return {
+              color: getNeonColor(feature.properties.difficolta),
+              weight: 5,
+              opacity: 0.95,
+              lineCap: 'round',
+              lineJoin: 'round'
+            };
+          },
+          onEachFeature: onEachFeature
+        }).addTo(map);
+
+        // Auto-fit map boundaries to all tracks
+        if (geoJsonLayer.getBounds().isValid()) {
+          map.fitBounds(geoJsonLayer.getBounds(), { padding: [30, 30] });
+        }
+      })
+      .catch(error => console.error('Error loading GeoJSON:', error));
+  </script>
 </body>
 </html>
