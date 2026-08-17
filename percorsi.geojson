@@ -12,7 +12,8 @@
         "sforzo": 6.7,
         "durata": "Mezza Giornata",
         "tempo_effettivo": "1h 58m",
-        "link": "https://www.wikiloc.com/hiking-trails/passo-oclini-corno-bianco-stadt-278907313"
+        "link": "https://www.wikiloc.com/hiking-trails/passo-oclini-corno-bianco-stadt-278907313",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
@@ -1075,7 +1076,8 @@
         "sforzo": 16.4,
         "durata": "Giornata Intera",
         "tempo_effettivo": "5h 08m",
-        "link": "https://www.wikiloc.com/hiking-trails/saint-marc-jaumegarde-73842424"
+        "link": "https://www.wikiloc.com/hiking-trails/saint-marc-jaumegarde-73842424",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
@@ -2042,7 +2044,8 @@
         "sforzo": 4.9,
         "durata": "Mezza Giornata",
         "tempo_effettivo": "1h 23m",
-        "link": "https://www.wikiloc.com/hiking-trails/cascate-di-salima-110547155"
+        "link": "https://www.wikiloc.com/hiking-trails/cascate-di-salima-110547155",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
@@ -2533,7 +2536,8 @@
         "sforzo": 4.6,
         "durata": "Mezza Giornata",
         "tempo_effettivo": "1h 43m",
-        "link": "https://www.wikiloc.com/hiking-trails/gola-di-rastenbach-279104627"
+        "link": "https://www.wikiloc.com/hiking-trails/gola-di-rastenbach-279104627",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
@@ -3896,7 +3900,8 @@
         "sforzo": 12.4,
         "durata": "Giornata Intera",
         "tempo_effettivo": "5h 31m",
-        "link": "https://www.wikiloc.com/hiking-trails/cima-di-col-margherita-e-rifugio-laresei-da-san-pellegrino-sul-sentiero-giallo-blu-279373248"
+        "link": "https://www.wikiloc.com/hiking-trails/cima-di-col-margherita-e-rifugio-laresei-da-san-pellegrino-sul-sentiero-giallo-blu-279373248",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
@@ -5851,7 +5856,8 @@
         "sforzo": 14.2,
         "durata": "Giornata Intera",
         "tempo_effettivo": "4h 28m",
-        "link": "https://www.wikiloc.com/hiking-trails/cascate-di-cavalese-110765731"
+        "link": "https://www.wikiloc.com/hiking-trails/cascate-di-cavalese-110765731",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
@@ -6366,7 +6372,8 @@
         "sforzo": 5.6,
         "durata": "Mezza Giornata",
         "tempo_effettivo": "2h 02m",
-        "link": "https://www.wikiloc.com/hiking-trails/carezza-catinaccio-rif-coronelle-110902808"
+        "link": "https://www.wikiloc.com/hiking-trails/carezza-catinaccio-rif-coronelle-110902808",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
@@ -6957,7 +6964,8 @@
         "sforzo": 15.4,
         "durata": "Giornata Intera",
         "tempo_effettivo": "6h 07m",
-        "link": "https://www.wikiloc.com/hiking-trails/rifugio-paolina-monumento-christomannos-rifugio-fronza-alle-coronelle-carezza-278509656"
+        "link": "https://www.wikiloc.com/hiking-trails/rifugio-paolina-monumento-christomannos-rifugio-fronza-alle-coronelle-carezza-278509656",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
@@ -8836,7 +8844,8 @@
         "sforzo": 8.8,
         "durata": "Giornata Intera",
         "tempo_effettivo": "5h 29m",
-        "link": "https://www.wikiloc.com/hiking-trails/rifugio-fuciade-da-passo-san-pellegrino-279549091"
+        "link": "https://www.wikiloc.com/hiking-trails/rifugio-fuciade-da-passo-san-pellegrino-279549091",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
@@ -10087,7 +10096,8 @@
         "sforzo": 18.7,
         "durata": "Giornata Intera",
         "tempo_effettivo": "7h 45m",
-        "link": "https://www.wikiloc.com/hiking-trails/val-venegia-110674226"
+        "link": "https://www.wikiloc.com/hiking-trails/val-venegia-110674226",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
@@ -10878,7 +10888,8 @@
         "sforzo": 17.3,
         "durata": "Giornata Intera",
         "tempo_effettivo": "8h 05m",
-        "link": "https://www.wikiloc.com/hiking-trails/vigo-di-fassa-80704947"
+        "link": "https://www.wikiloc.com/hiking-trails/vigo-di-fassa-80704947",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
@@ -12009,7 +12020,8 @@
         "sforzo": 8.3,
         "durata": "Mezza Giornata",
         "tempo_effettivo": "1h 45m",
-        "link": "https://www.wikiloc.com/hiking-trails/calcata-165534716"
+        "link": "https://www.wikiloc.com/hiking-trails/calcata-165534716",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
@@ -12704,7 +12716,8 @@
         "sforzo": 13.0,
         "durata": "Giornata Intera",
         "tempo_effettivo": "5h 30m",
-        "link": "https://www.wikiloc.com/hiking-trails/sentiero-di-federico-augusto-di-sassonia-143501001"
+        "link": "https://www.wikiloc.com/hiking-trails/sentiero-di-federico-augusto-di-sassonia-143501001",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
@@ -13431,7 +13444,8 @@
         "sforzo": 8.5,
         "durata": "Giornata Intera",
         "tempo_effettivo": "4h 38m",
-        "link": "https://www.wikiloc.com/hiking-trails/sasso-cappello-226081198"
+        "link": "https://www.wikiloc.com/hiking-trails/sasso-cappello-226081198",
+        "image_url": null
       },
       "geometry": {
         "type": "LineString",
