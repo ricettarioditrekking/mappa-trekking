@@ -48,21 +48,23 @@ def calcola_dislivelli_wikiloc(elevations, window_size=9):
 
 
 def estrai_immagine_wikiloc(url):
-    """Scrapes the og:image metadata tag from the Wikiloc webpage."""
+    """Scrapes the og:image meta tag from Wikiloc using browser spoofing headers."""
     if not url or "wikiloc.com" not in url:
         return None
     try:
-        req = urllib.request.Request(
-            url, 
-            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-        )
-        with urllib.request.urlopen(req, timeout=4) as response:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9,it;q=0.8',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+        }
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=5) as response:
             html = response.read().decode('utf-8', errors='ignore')
             match = re.search(r'<meta\s+property="og:image"\s+content="([^"]+)"', html)
             if match:
                 return match.group(1)
     except Exception as e:
-        print(f"Could not fetch thumbnail for {url}: {e}")
+        print(f"Skipping thumbnail for {url}: {e}")
     return None
 
 
