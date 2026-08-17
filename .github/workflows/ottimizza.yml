@@ -1,0 +1,41 @@
+# Name of the automated GitHub Action workflow[cite: 1]
+name: Ottimizza Tracciati GPS
+
+# Trigger rule: Run automatically whenever files inside the 'tracce/' directory are added or modified[cite: 1]
+on:
+  push:
+    paths:
+      - 'tracce/**'
+
+jobs:
+  build:
+    # Run the automation job inside a fresh Ubuntu cloud environment[cite: 1]
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Download your repository contents into the cloud worker environment[cite: 1]
+      - name: Accedi al codice
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python 3.11 on the virtual runner[cite: 1]
+      - name: Configura Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Step 3: Run your Python script to parse GPX files and update percorsi.geojson[cite: 1]
+      - name: Elabora e Semplifica i GPX
+        run: python elabora_tracce.py
+
+      # Step 4: Commit and push the updated percorsi.geojson back to your GitHub repository[cite: 1]
+      - name: Salva le modifiche nel repository
+        run: |
+          # Configure temporary Git user details for the cloud bot[cite: 1]
+          git config --global user.name 'GitHub Action Robot'
+          git config --global user.email 'action@github.com'
+          
+          # Stage the generated percorsi.geojson database file[cite: 1]
+          git add percorsi.geojson
+          
+          # Check for changes; if percorsi.geojson was updated, commit and push it automatically[cite: 1]
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Automazione: Tracce elaborate con successo" && git push)
