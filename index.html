@@ -126,7 +126,7 @@ attribution: 'Map data: © OpenStreetMap'
 let geojsonLayer;
 let masterTrailsData = null;
 
-fetch('percorsi.geojson')
+fetch('percorsi.geojson?v=' + new Date().getTime())
 .then(response => response.json())
 .then(data => {
 masterTrailsData = data;
