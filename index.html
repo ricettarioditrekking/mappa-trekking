@@ -30,7 +30,7 @@ select { width: 100%; padding: 6px; box-sizing: border-box; border-radius: 4px; 
 <div id="sidebar">
 <h3 style="margin: 0 0 5px 0;">Filtri Percorsi</h3>
 
-<!-- Difficoltà (Indice CAI) -->
+<!-- Difficoltà -->
 <div class="filter-group">
 <label class="filter-title" for="difficolta">Difficoltà:</label>
 <select id="difficolta" onchange="applicaFiltri()">
@@ -98,11 +98,11 @@ select { width: 100%; padding: 6px; box-sizing: border-box; border-radius: 4px; 
 
 <!-- Durata -->
 <div class="filter-group">
-<label class="filter-title" for="durata">Durata Stimata:</label>
+<label class="filter-title" for="durata">Categoria Durata:</label>
 <select id="durata" onchange="applicaFiltri()">
 <option value="tutte">Tutte</option>
-<option value="Mezza Giornata">Mezza Giornata (≤ 10 km)</option>
-<option value="Giornata Intera">Giornata Intera (> 10 km)</option>
+<option value="Mezza Giornata">Mezza Giornata (≤ 4 ore)</option>
+<option value="Giornata Intera">Giornata Intera (> 4 ore)</option>
 </select>
 </div>
 
@@ -205,6 +205,7 @@ return { color: lineCol, weight: 4, opacity: 0.8 };
 onEachFeature: function(feature, layer) {
 const p = feature.properties;
 const dislivelloNeg = p.dislivello_neg !== undefined ? p.dislivello_neg : 0;
+const tempoStr = p.tempo_effettivo ? p.tempo_effettivo : p.durata;
 
 const linkHtml = p.link 
   ? '<br><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 5px;">Vedi su Wikiloc ↗</a>' 
@@ -213,8 +214,8 @@ const linkHtml = p.link
 layer.bindPopup('<strong>' + p.name + '</strong><br>' +
 'Distanza: ' + p.km + ' km<br>' +
 'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
-'Difficoltà: ' + p.difficolta + '<br>' +
-'Durata: ' + p.durata + 
+'Tempo registrato: ' + tempoStr + '<br>' +
+'Difficoltà: ' + p.difficolta + 
 linkHtml);
 }
 }).addTo(map);
