@@ -7,6 +7,7 @@
         "name": "Corno Bianco - Wikiloc",
         "km": 3.5,
         "dislivello": 317,
+        "dislivello_neg": 361,
         "difficolta": "Facile",
         "durata": "Mezza Giornata"
       },
@@ -1066,6 +1067,7 @@
         "name": "Mont Sainte Victoire - Wikiloc",
         "km": 10.5,
         "dislivello": 593,
+        "dislivello_neg": 592,
         "difficolta": "Media",
         "durata": "Giornata Intera"
       },
@@ -2029,6 +2031,7 @@
         "name": "Cascate di Salíma - Wikiloc",
         "km": 4.6,
         "dislivello": 31,
+        "dislivello_neg": 177,
         "difficolta": "Facile",
         "durata": "Mezza Giornata"
       },
@@ -2516,6 +2519,7 @@
         "name": "Gola di Rastenbach - Wikiloc",
         "km": 2.9,
         "dislivello": 172,
+        "dislivello_neg": 186,
         "difficolta": "Facile",
         "durata": "Mezza Giornata"
       },
@@ -3875,6 +3879,7 @@
         "name": "Cima di Col Margherita e Rifugio Laresei da San Pellegrino sul sentiero giallo-blu - Wikiloc",
         "km": 10.7,
         "dislivello": 173,
+        "dislivello_neg": 819,
         "difficolta": "Facile",
         "durata": "Giornata Intera"
       },
@@ -5826,6 +5831,7 @@
         "name": "Cascate di Cavalese - Wikiloc",
         "km": 13.1,
         "dislivello": 115,
+        "dislivello_neg": 116,
         "difficolta": "Facile",
         "durata": "Giornata Intera"
       },
@@ -6337,6 +6343,7 @@
         "name": "Carezza - Catinaccio - Rif. Coronelle - Wikiloc",
         "km": 3.5,
         "dislivello": 211,
+        "dislivello_neg": 19,
         "difficolta": "Facile",
         "durata": "Mezza Giornata"
       },
@@ -6924,6 +6931,7 @@
         "name": "Rifugio Paolina - Rifugio Coronelle - Carezza - Wikiloc",
         "km": 12.1,
         "dislivello": 333,
+        "dislivello_neg": 728,
         "difficolta": "Facile",
         "durata": "Giornata Intera"
       },
@@ -8799,6 +8807,7 @@
         "name": "Rifugio Fuciade da Passo San Pellegrino - Wikiloc",
         "km": 7.6,
         "dislivello": 120,
+        "dislivello_neg": 157,
         "difficolta": "Facile",
         "durata": "Mezza Giornata"
       },
@@ -10046,6 +10055,7 @@
         "name": "Val Venegia - Wikiloc",
         "km": 14.1,
         "dislivello": 456,
+        "dislivello_neg": 498,
         "difficolta": "Media",
         "durata": "Giornata Intera"
       },
@@ -10833,6 +10843,7 @@
         "name": "Giro ad anello del Catinaccio partendo dal Rif. Ciampedie e passando per il Rif. Vajolet e il Rif. Stella Alpina - Wikiloc",
         "km": 12.0,
         "dislivello": 531,
+        "dislivello_neg": 532,
         "difficolta": "Media",
         "durata": "Giornata Intera"
       },
@@ -11960,6 +11971,7 @@
         "name": "Calcata - Wikiloc",
         "km": 6.2,
         "dislivello": 210,
+        "dislivello_neg": 211,
         "difficolta": "Facile",
         "durata": "Mezza Giornata"
       },
@@ -12651,6 +12663,7 @@
         "name": "Sentiero di Federico Augusto di Sassonia - Wikiloc",
         "km": 10.2,
         "dislivello": 282,
+        "dislivello_neg": 265,
         "difficolta": "Facile",
         "durata": "Giornata Intera"
       },
@@ -13374,6 +13387,7 @@
         "name": "Viel del Pan con ascesa al Sasso Cappello - Wikiloc",
         "km": 6.7,
         "dislivello": 182,
+        "dislivello_neg": 141,
         "difficolta": "Facile",
         "durata": "Mezza Giornata"
       },
