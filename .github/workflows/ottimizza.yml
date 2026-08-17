@@ -1,43 +1,48 @@
-# Name of the automated GitHub Action workflow[cite: 1]
-name: Ottimizza Tracciati GPS
+name: Ottimizza e Pubblica Mappa GPX
 
-# Trigger rule: Run automatically whenever files inside the 'tracce/' directory are added or modified[cite: 1]
 on:
   push:
-    paths:
-      - 'tracce/**'
-      branches: [ main ]
-  workflow_dispatch:
+    branches:
+      - main
+  workflow_dispatch: # Enables manual trigger button in GitHub Actions UI
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  build:
-    # Run the automation job inside a fresh Ubuntu cloud environment[cite: 1]
+  build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Download your repository contents into the cloud worker environment[cite: 1]
-      - name: Accedi al codice
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Python 3.11 on the virtual runner[cite: 1]
       - name: Configura Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.x'
 
-      # Step 3: Run your Python script to parse GPX files and update percorsi.geojson[cite: 1]
-      - name: Elabora e Semplifica i GPX
+      - name: Ricalcola percorsi.geojson
         run: python elabora_tracce.py
 
-      # Step 4: Commit and push the updated percorsi.geojson back to your GitHub repository[cite: 1]
-      - name: Salva le modifiche nel repository
-        run: |
-          # Configure temporary Git user details for the cloud bot[cite: 1]
-          git config --global user.name 'GitHub Action Robot'
-          git config --global user.email 'action@github.com'
-          
-          # Stage the generated percorsi.geojson database file[cite: 1]
-          git add percorsi.geojson
-          
-          # Check for changes; if percorsi.geojson was updated, commit and push it automatically[cite: 1]
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Automazione: Tracce elaborate con successo" && git push)
+      - name: Commit e Push del percorsi.geojson
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Ricalcola percorsi.geojson con filtri altimetrici"
+          file_pattern: "percorsi.geojson"
+
+      - name: Configura GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Carica Artefatto Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy su GitHub Pages
+        uses: actions/deploy-pages@v5
