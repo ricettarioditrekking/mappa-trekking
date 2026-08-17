@@ -2,12 +2,13 @@ import os
 import glob
 import json
 import math
+import re
+import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
 
 def haversine(lat1, lon1, lat2, lon2):
-    """Calculates horizontal distance between two coordinates in kilometers."""
     R = 6371.0
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
@@ -22,7 +23,6 @@ def haversine(lat1, lon1, lat2, lon2):
 
 
 def calcola_dislivelli_wikiloc(elevations, window_size=9):
-    """Smooths raw GPX elevation data and returns positive gain and negative loss."""
     clean_ele = [float(e) for e in elevations if e is not None]
     if len(clean_ele) < window_size:
         return 0, 0
@@ -47,8 +47,26 @@ def calcola_dislivelli_wikiloc(elevations, window_size=9):
     return int(round(gain)), int(round(loss))
 
 
+def estrai_immagine_wikiloc(url):
+    """Scrapes the og:image metadata tag from the Wikiloc webpage."""
+    if not url or "wikiloc.com" not in url:
+        return None
+    try:
+        req = urllib.request.Request(
+            url, 
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        )
+        with urllib.request.urlopen(req, timeout=4) as response:
+            html = response.read().decode('utf-8', errors='ignore')
+            match = re.search(r'<meta\s+property="og:image"\s+content="([^"]+)"', html)
+            if match:
+                return match.group(1)
+    except Exception as e:
+        print(f"Could not fetch thumbnail for {url}: {e}")
+    return None
+
+
 def processa_gpx(file_path):
-    """Parses GPX, calculates stats rounded to 1 decimal place, and builds GeoJSON Feature."""
     tree = ET.parse(file_path)
     root = tree.getroot()
 
@@ -82,11 +100,9 @@ def processa_gpx(file_path):
             except ValueError:
                 pass
 
-    # Limit distance to 1 figure after the dot
     km = round(total_dist_km, 1)
     dislivello_pos, dislivello_neg = calcola_dislivelli_wikiloc(elevations, window_size=9)
 
-    # Recorded time or fallback estimation
     if len(timestamps) >= 2:
         elapsed = timestamps[-1] - timestamps[0]
         total_minutes = int(elapsed.total_seconds() / 60)
@@ -99,7 +115,6 @@ def processa_gpx(file_path):
         tempo_testo = f"~{est_hours} ore"
         durata_cat = "Mezza Giornata" if est_hours <= 4.0 else "Giornata Intera"
 
-    # CAI Effort Index limited to 1 figure after the dot
     effort_score = round(km + (dislivello_pos / 100.0), 1)
 
     if effort_score < 12:
@@ -111,7 +126,6 @@ def processa_gpx(file_path):
     else:
         difficolta = "Molto Difficile"
 
-    # Track name
     name_elem = root.find('.//{*}trk/{*}name')
     if name_elem is not None and name_elem.text:
         track_name = name_elem.text.strip()
@@ -119,11 +133,12 @@ def processa_gpx(file_path):
         base = os.path.basename(file_path)
         track_name = os.path.splitext(base)[0].replace('_', ' ').replace('-', ' ').title()
 
-    # Wikiloc link
     wikiloc_link = None
     link_elem = root.find('.//{*}link')
     if link_elem is not None and 'href' in link_elem.attrib:
         wikiloc_link = link_elem.attrib['href']
+
+    image_url = estrai_immagine_wikiloc(wikiloc_link)
 
     return {
         "type": "Feature",
@@ -136,7 +151,8 @@ def processa_gpx(file_path):
             "sforzo": effort_score,
             "durata": durata_cat,
             "tempo_effettivo": tempo_testo,
-            "link": wikiloc_link
+            "link": wikiloc_link,
+            "image_url": image_url
         },
         "geometry": {
             "type": "LineString",
