@@ -7,6 +7,7 @@ from datetime import datetime
 
 
 def haversine(lat1, lon1, lat2, lon2):
+    """Calculates horizontal distance between two coordinates in kilometers."""
     R = 6371.0
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
@@ -21,6 +22,7 @@ def haversine(lat1, lon1, lat2, lon2):
 
 
 def calcola_dislivelli_wikiloc(elevations, window_size=9):
+    """Smooths raw GPX elevation data and returns positive gain and negative loss."""
     clean_ele = [float(e) for e in elevations if e is not None]
     if len(clean_ele) < window_size:
         return 0, 0
@@ -46,6 +48,7 @@ def calcola_dislivelli_wikiloc(elevations, window_size=9):
 
 
 def processa_gpx(file_path):
+    """Parses GPX, calculates stats rounded to 1 decimal place, and builds GeoJSON Feature."""
     tree = ET.parse(file_path)
     root = tree.getroot()
 
@@ -60,12 +63,10 @@ def processa_gpx(file_path):
         lon = float(trkpt.attrib['lon'])
         coords.append([lon, lat])
 
-        # Track Distance
         if last_lat is not None and last_lon is not None:
             total_dist_km += haversine(last_lat, last_lon, lat, lon)
         last_lat, last_lon = lat, lon
 
-        # Track Elevation
         ele_elem = trkpt.find('{*}ele')
         if ele_elem is not None and ele_elem.text:
             try:
@@ -73,7 +74,6 @@ def processa_gpx(file_path):
             except ValueError:
                 pass
 
-        # Track Timestamps
         time_elem = trkpt.find('{*}time')
         if time_elem is not None and time_elem.text:
             try:
@@ -82,10 +82,11 @@ def processa_gpx(file_path):
             except ValueError:
                 pass
 
+    # Limit distance to 1 figure after the dot
     km = round(total_dist_km, 1)
     dislivello_pos, dislivello_neg = calcola_dislivelli_wikiloc(elevations, window_size=9)
 
-    # 1. Calculate Real Duration from GPX Timestamps
+    # Recorded time or fallback estimation
     if len(timestamps) >= 2:
         elapsed = timestamps[-1] - timestamps[0]
         total_minutes = int(elapsed.total_seconds() / 60)
@@ -94,13 +95,13 @@ def processa_gpx(file_path):
         tempo_testo = f"{hours}h {minutes:02d}m"
         durata_cat = "Mezza Giornata" if total_minutes <= 240 else "Giornata Intera"
     else:
-        # Fallback estimation if time tags are missing
-        est_hours = (km / 4.0) + (dislivello_pos / 400.0) #https://en.wikipedia.org/wiki/Naismith%27s_rule
-        tempo_testo = f"~{round(est_hours, 1)} ore"
+        est_hours = round((km / 4.0) + (dislivello_pos / 400.0), 1)
+        tempo_testo = f"~{est_hours} ore"
         durata_cat = "Mezza Giornata" if est_hours <= 4.0 else "Giornata Intera"
 
-    # 2. Difficulty Score (CAI Index) #https://en.wikipedia.org/wiki/Naismith%27s_rule
-    effort_score = km + (dislivello_pos / 100.0)
+    # CAI Effort Index limited to 1 figure after the dot
+    effort_score = round(km + (dislivello_pos / 100.0), 1)
+
     if effort_score < 12:
         difficolta = "Facile"
     elif effort_score <= 22:
@@ -110,7 +111,7 @@ def processa_gpx(file_path):
     else:
         difficolta = "Molto Difficile"
 
-    # 3. Extract Metadata
+    # Track name
     name_elem = root.find('.//{*}trk/{*}name')
     if name_elem is not None and name_elem.text:
         track_name = name_elem.text.strip()
@@ -118,6 +119,7 @@ def processa_gpx(file_path):
         base = os.path.basename(file_path)
         track_name = os.path.splitext(base)[0].replace('_', ' ').replace('-', ' ').title()
 
+    # Wikiloc link
     wikiloc_link = None
     link_elem = root.find('.//{*}link')
     if link_elem is not None and 'href' in link_elem.attrib:
@@ -130,8 +132,8 @@ def processa_gpx(file_path):
             "km": km,
             "dislivello": dislivello_pos,
             "dislivello_neg": dislivello_neg,
-            "sforzo": effort_score,  # Adds numerical effort score
             "difficolta": difficolta,
+            "sforzo": effort_score,
             "durata": durata_cat,
             "tempo_effettivo": tempo_testo,
             "link": wikiloc_link
