@@ -51,8 +51,7 @@
       margin-bottom: 6px;
     }
 
-    .filter-group select, 
-    .filter-group input[type="range"] {
+    .filter-group select {
       width: 100%;
       padding: 6px;
       border-radius: 4px;
@@ -70,11 +69,23 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
+      margin-top: 4px;
     }
 
-    .range-label {
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .slider-row span {
       font-size: 0.75rem;
-      color: #777;
+      color: #666;
+      width: 30px;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
     }
 
     #stats {
@@ -128,30 +139,48 @@
       </select>
     </div>
 
-    <!-- Distanza -->
+    <!-- Distanza (Double Slider) -->
     <div class="filter-group">
       <label>Distanza (Km): <span id="val-dist" class="range-val">0 - 50 km</span></label>
       <div class="range-sliders">
-        <span class="range-label">Max:</span>
-        <input type="range" id="filter-dist-max" min="0" max="50" value="50" step="1">
+        <div class="slider-row">
+          <span>Min:</span>
+          <input type="range" id="filter-dist-min" min="0" max="50" value="0" step="1">
+        </div>
+        <div class="slider-row">
+          <span>Max:</span>
+          <input type="range" id="filter-dist-max" min="0" max="50" value="50" step="1">
+        </div>
       </div>
     </div>
 
-    <!-- Dislivello + -->
+    <!-- Dislivello + (Double Slider) -->
     <div class="filter-group">
       <label>Dislivello + (m): <span id="val-dis-pos" class="range-val">0 - 2500 m</span></label>
       <div class="range-sliders">
-        <span class="range-label">Max:</span>
-        <input type="range" id="filter-dis-pos-max" min="0" max="2500" value="2500" step="50">
+        <div class="slider-row">
+          <span>Min:</span>
+          <input type="range" id="filter-dis-pos-min" min="0" max="2500" value="0" step="50">
+        </div>
+        <div class="slider-row">
+          <span>Max:</span>
+          <input type="range" id="filter-dis-pos-max" min="0" max="2500" value="2500" step="50">
+        </div>
       </div>
     </div>
 
-    <!-- Dislivello - -->
+    <!-- Dislivello - (Double Slider) -->
     <div class="filter-group">
       <label>Dislivello - (m): <span id="val-dis-neg" class="range-val">0 - 2500 m</span></label>
       <div class="range-sliders">
-        <span class="range-label">Max:</span>
-        <input type="range" id="filter-dis-neg-max" min="0" max="2500" value="2500" step="50">
+        <div class="slider-row">
+          <span>Min:</span>
+          <input type="range" id="filter-dis-neg-min" min="0" max="2500" value="0" step="50">
+        </div>
+        <div class="slider-row">
+          <span>Max:</span>
+          <input type="range" id="filter-dis-neg-max" min="0" max="2500" value="2500" step="50">
+        </div>
       </div>
     </div>
 
@@ -175,7 +204,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    // Global data stores
     let allData = null;
     let geoJsonLayer = null;
 
@@ -251,29 +279,38 @@
       });
     }
 
-    // 5. Filtering Logic
+    // 5. Filtering Logic with Min/Max Bounds
     function applyFilters() {
       if (!allData) return;
 
       const diffVal = document.getElementById('filter-difficolta').value;
-      const distMax = parseFloat(document.getElementById('filter-dist-max').value);
-      const disPosMax = parseFloat(document.getElementById('filter-dis-pos-max').value);
-      const disNegMax = parseFloat(document.getElementById('filter-dis-neg-max').value);
       const durataVal = document.getElementById('filter-durata').value;
 
+      let distMin = parseFloat(document.getElementById('filter-dist-min').value);
+      let distMax = parseFloat(document.getElementById('filter-dist-max').value);
+      let disPosMin = parseFloat(document.getElementById('filter-dis-pos-min').value);
+      let disPosMax = parseFloat(document.getElementById('filter-dis-pos-max').value);
+      let disNegMin = parseFloat(document.getElementById('filter-dis-neg-min').value);
+      let disNegMax = parseFloat(document.getElementById('filter-dis-neg-max').value);
+
+      // Prevent min from exceeding max
+      if (distMin > distMax) [distMin, distMax] = [distMax, distMin];
+      if (disPosMin > disPosMax) [disPosMin, disPosMax] = [disPosMax, disPosMin];
+      if (disNegMin > disNegMax) [disNegMin, disNegMax] = [disNegMax, disNegMin];
+
       // Update Slider Label Displays
-      document.getElementById('val-dist').textContent = `0 - ${distMax} km`;
-      document.getElementById('val-dis-pos').textContent = `0 - ${disPosMax} m`;
-      document.getElementById('val-dis-neg').textContent = `0 - ${disNegMax} m`;
+      document.getElementById('val-dist').textContent = `${distMin} - ${distMax} km`;
+      document.getElementById('val-dis-pos').textContent = `${disPosMin} - ${disPosMax} m`;
+      document.getElementById('val-dis-neg').textContent = `${disNegMin} - ${disNegMax} m`;
 
       // Filter Features
       const filteredFeatures = allData.features.filter(feature => {
         const p = feature.properties;
         
         const matchDiff = (diffVal === 'Tutte' || p.difficolta === diffVal);
-        const matchDist = (p.km <= distMax);
-        const matchDisPos = (p.dislivello <= disPosMax);
-        const matchDisNeg = ((p.dislivello_neg || 0) <= disNegMax);
+        const matchDist = (p.km >= distMin && p.km <= distMax);
+        const matchDisPos = (p.dislivello >= disPosMin && p.dislivello <= disPosMax);
+        const matchDisNeg = ((p.dislivello_neg || 0) >= disNegMin && (p.dislivello_neg || 0) <= disNegMax);
         const matchDurata = (durataVal === 'Tutte' || p.durata === durataVal);
 
         return matchDiff && matchDist && matchDisPos && matchDisNeg && matchDurata;
@@ -304,9 +341,10 @@
     // 6. Event Listeners for Filters
     document.getElementById('filter-difficolta').addEventListener('change', applyFilters);
     document.getElementById('filter-durata').addEventListener('change', applyFilters);
-    document.getElementById('filter-dist-max').addEventListener('input', applyFilters);
-    document.getElementById('filter-dis-pos-max').addEventListener('input', applyFilters);
-    document.getElementById('filter-dis-neg-max').addEventListener('input', applyFilters);
+
+    ['filter-dist-min', 'filter-dist-max', 'filter-dis-pos-min', 'filter-dis-pos-max', 'filter-dis-neg-min', 'filter-dis-neg-max'].forEach(id => {
+      document.getElementById(id).addEventListener('input', applyFilters);
+    });
 
     // 7. Fetch GeoJSON Data
     fetch('percorsi.geojson?v=' + new Date().getTime())
