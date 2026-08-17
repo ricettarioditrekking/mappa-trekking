@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mappa Trekking Automatica ed Ultra-Leggera</title>
 
-<!-- Fixed Leaflet CSS Link -->
+<!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <style>
@@ -53,7 +53,7 @@ select, input[type="range"] { width: 100%; padding: 5px; box-sizing: border-box;
 
 <div id="map"></div>
 
-<!-- Fixed Leaflet JS Link -->
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
@@ -107,10 +107,13 @@ if(feature.properties.difficolta === "Difficile") lineCol = "red";
 return { color: lineCol, weight: 4, opacity: 0.8 };
 },
 onEachFeature: function(feature, layer) {
-layer.bindPopup('<strong>' + feature.properties.name + '</strong><br>' +
-'Distanza: ' + feature.properties.km + ' km<br>' +
-'Dislivello: +' + feature.properties.dislivello + 'm<br>' +
-'Durata: ' + feature.properties.durata);
+const p = feature.properties;
+const dislivelloNeg = p.dislivello_neg !== undefined ? p.dislivello_neg : 0;
+
+layer.bindPopup('<strong>' + p.name + '</strong><br>' +
+'Distanza: ' + p.km + ' km<br>' +
+'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
+'Durata: ' + p.durata);
 }
 }).addTo(map);
 
