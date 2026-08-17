@@ -10,36 +10,83 @@
 
 <style>
 body { font-family: sans-serif; margin: 0; display: flex; height: 100vh; }
-#sidebar { width: 300px; padding: 20px; background: #f4f4f4; z-index: 1000; box-shadow: 2px 0 5px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; gap: 15px; }
+#sidebar { width: 320px; padding: 20px; background: #f4f4f4; z-index: 1000; box-shadow: 2px 0 5px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; }
 #map { flex-grow: 1; height: 100%; }
-.filter-group { display: flex; flex-direction: column; gap: 5px; }
-label { font-weight: bold; font-size: 14px; }
-select, input[type="range"] { width: 100%; padding: 5px; box-sizing: border-box; }
+
+.filter-group { display: flex; flex-direction: column; gap: 6px; }
+.filter-title { font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; }
+.range-values { font-weight: normal; color: #2c3e50; }
+
+.dual-slider { display: flex; flex-direction: column; gap: 4px; }
+.slider-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666; }
+.slider-row input[type="range"] { flex-grow: 1; margin: 0; }
+
+select { width: 100%; padding: 6px; box-sizing: border-box; border-radius: 4px; border: 1px solid #ccc; }
 #counter { font-size: 13px; color: #555; font-style: italic; }
 </style>
 </head>
 <body>
 
 <div id="sidebar">
-<h3>Filtri Cumulativi</h3>
+<h3 style="margin: 0 0 5px 0;">Filtri Percorsi</h3>
 
+<!-- Distanza (Km) Range -->
 <div class="filter-group">
-<label for="difficolta">Difficoltà:</label>
-<select id="difficolta" onchange="applicaFiltri()">
-<option value="tutte">Tutte</option>
-<option value="Facile">Facile (Salita < 400m)</option>
-<option value="Media">Media (Salita 400-800m)</option>
-<option value="Difficile">Difficile (Salita > 800m)</option>
-</select>
+<div class="filter-title">
+<span>Distanza (Km):</span>
+<span class="range-values" id="km-val">0 - 30 km</span>
+</div>
+<div class="dual-slider">
+<div class="slider-row">
+<span>Min:</span>
+<input type="range" id="km-min" min="0" max="50" value="0" oninput="aggiornaFiltri()">
+</div>
+<div class="slider-row">
+<span>Max:</span>
+<input type="range" id="km-max" min="0" max="50" value="30" oninput="aggiornaFiltri()">
+</div>
+</div>
 </div>
 
+<!-- Dislivello Positivo (+) Range -->
 <div class="filter-group">
-<label>Km Massimi: <span id="km-val">25</span> km</label>
-<input type="range" id="km-max" min="0" max="50" value="25" oninput="document.getElementById('km-val').innerText = this.value; applicaFiltri()">
+<div class="filter-title">
+<span>Dislivello + (m):</span>
+<span class="range-values" id="pos-val">0 - 1500 m</span>
+</div>
+<div class="dual-slider">
+<div class="slider-row">
+<span>Min:</span>
+<input type="range" id="pos-min" min="0" max="2000" step="50" value="0" oninput="aggiornaFiltri()">
+</div>
+<div class="slider-row">
+<span>Max:</span>
+<input type="range" id="pos-max" min="0" max="2000" step="50" value="1500" oninput="aggiornaFiltri()">
+</div>
+</div>
 </div>
 
+<!-- Dislivello Negativo (-) Range -->
 <div class="filter-group">
-<label for="durata">Durata Stimata:</label>
+<div class="filter-title">
+<span>Dislivello - (m):</span>
+<span class="range-values" id="neg-val">0 - 1500 m</span>
+</div>
+<div class="dual-slider">
+<div class="slider-row">
+<span>Min:</span>
+<input type="range" id="neg-min" min="0" max="2000" step="50" value="0" oninput="aggiornaFiltri()">
+</div>
+<div class="slider-row">
+<span>Max:</span>
+<input type="range" id="neg-max" min="0" max="2000" step="50" value="1500" oninput="aggiornaFiltri()">
+</div>
+</div>
+</div>
+
+<!-- Durata -->
+<div class="filter-group">
+<label class="filter-title" for="durata">Durata Stimata:</label>
 <select id="durata" onchange="applicaFiltri()">
 <option value="tutte">Tutte</option>
 <option value="Mezza Giornata">Mezza Giornata (≤ 10 km)</option>
@@ -71,39 +118,71 @@ fetch('percorsi.geojson')
 .then(response => response.json())
 .then(data => {
 masterTrailsData = data;
-applicaFiltri();
+aggiornaFiltri();
 })
 .catch(err => {
-document.getElementById('counter').innerText = "Errore database. Generazione in corso?";
-console.error("GeoJSON not ready yet:", err);
+document.getElementById('counter').innerText = "Errore caricamento GeoJSON.";
+console.error("GeoJSON load error:", err);
 });
+
+function aggiornaFiltri() {
+// Ensure min sliders do not exceed max sliders
+let kmMin = parseInt(document.getElementById('km-min').value);
+let kmMax = parseInt(document.getElementById('km-max').value);
+if (kmMin > kmMax) { kmMin = kmMax; document.getElementById('km-min').value = kmMin; }
+
+let posMin = parseInt(document.getElementById('pos-min').value);
+let posMax = parseInt(document.getElementById('pos-max').value);
+if (posMin > posMax) { posMin = posMax; document.getElementById('pos-min').value = posMin; }
+
+let negMin = parseInt(document.getElementById('neg-min').value);
+let negMax = parseInt(document.getElementById('neg-max').value);
+if (negMin > negMax) { negMin = negMax; document.getElementById('neg-min').value = negMin; }
+
+// Update displayed range texts
+document.getElementById('km-val').innerText = kmMin + ' - ' + kmMax + ' km';
+document.getElementById('pos-val').innerText = posMin + ' - ' + posMax + ' m';
+document.getElementById('neg-val').innerText = negMin + ' - ' + negMax + ' m';
+
+applicaFiltri();
+}
 
 function applicaFiltri() {
 if (!masterTrailsData) return;
 
 if (geojsonLayer) { map.removeLayer(geojsonLayer); }
 
-const diffSelezionata = document.getElementById('difficolta').value;
-const kmMassimi = parseInt(document.getElementById('km-max').value);
+const kmMin = parseInt(document.getElementById('km-min').value);
+const kmMax = parseInt(document.getElementById('km-max').value);
+
+const posMin = parseInt(document.getElementById('pos-min').value);
+const posMax = parseInt(document.getElementById('pos-max').value);
+
+const negMin = parseInt(document.getElementById('neg-min').value);
+const negMax = parseInt(document.getElementById('neg-max').value);
+
 const durataSelezionata = document.getElementById('durata').value;
 
 let visibleCount = 0;
 
 geojsonLayer = L.geoJSON(masterTrailsData, {
 filter: function(feature) {
-const props = feature.properties;
-const rispettaDiff = (diffSelezionata === "tutte" || props.difficolta === diffSelezionata);
-const rispettaKm = (props.km <= kmMassimi);
-const rispettaDurata = (durataSelezionata === "tutte" || props.durata === durataSelezionata);
+const p = feature.properties;
+const dislivelloNeg = p.dislivello_neg !== undefined ? p.dislivello_neg : 0;
 
-const isMatch = rispettaDiff && rispettaKm && rispettaDurata;
+const rispettaKm = (p.km >= kmMin && p.km <= kmMax);
+const rispettaPos = (p.dislivello >= posMin && p.dislivello <= posMax);
+const rispettaNeg = (dislivelloNeg >= negMin && dislivelloNeg <= negMax);
+const rispettaDurata = (durataSelezionata === "tutte" || p.durata === durataSelezionata);
+
+const isMatch = rispettaKm && rispettaPos && rispettaNeg && rispettaDurata;
 if (isMatch) visibleCount++;
 return isMatch;
 },
 style: function(feature) {
 let lineCol = "green";
-if(feature.properties.difficolta === "Media") lineCol = "orange";
-if(feature.properties.difficolta === "Difficile") lineCol = "red";
+if (feature.properties.dislivello > 400 && feature.properties.dislivello <= 800) lineCol = "orange";
+if (feature.properties.dislivello > 800) lineCol = "red";
 return { color: lineCol, weight: 4, opacity: 0.8 };
 },
 onEachFeature: function(feature, layer) {
