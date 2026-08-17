@@ -10,6 +10,7 @@
         "dislivello_neg": 361,
         "difficolta": "Facile",
         "durata": "Mezza Giornata",
+        "tempo_effettivo": "1h 58m",
         "link": "https://www.wikiloc.com/hiking-trails/passo-oclini-corno-bianco-stadt-278907313"
       },
       "geometry": {
@@ -1071,6 +1072,7 @@
         "dislivello_neg": 592,
         "difficolta": "Media",
         "durata": "Giornata Intera",
+        "tempo_effettivo": "5h 08m",
         "link": "https://www.wikiloc.com/hiking-trails/saint-marc-jaumegarde-73842424"
       },
       "geometry": {
@@ -2036,6 +2038,7 @@
         "dislivello_neg": 177,
         "difficolta": "Facile",
         "durata": "Mezza Giornata",
+        "tempo_effettivo": "1h 23m",
         "link": "https://www.wikiloc.com/hiking-trails/cascate-di-salima-110547155"
       },
       "geometry": {
@@ -2525,6 +2528,7 @@
         "dislivello_neg": 186,
         "difficolta": "Facile",
         "durata": "Mezza Giornata",
+        "tempo_effettivo": "1h 43m",
         "link": "https://www.wikiloc.com/hiking-trails/gola-di-rastenbach-279104627"
       },
       "geometry": {
@@ -3886,6 +3890,7 @@
         "dislivello_neg": 819,
         "difficolta": "Media",
         "durata": "Giornata Intera",
+        "tempo_effettivo": "5h 31m",
         "link": "https://www.wikiloc.com/hiking-trails/cima-di-col-margherita-e-rifugio-laresei-da-san-pellegrino-sul-sentiero-giallo-blu-279373248"
       },
       "geometry": {
@@ -5839,6 +5844,7 @@
         "dislivello_neg": 116,
         "difficolta": "Media",
         "durata": "Giornata Intera",
+        "tempo_effettivo": "4h 28m",
         "link": "https://www.wikiloc.com/hiking-trails/cascate-di-cavalese-110765731"
       },
       "geometry": {
@@ -6352,6 +6358,7 @@
         "dislivello_neg": 19,
         "difficolta": "Facile",
         "durata": "Mezza Giornata",
+        "tempo_effettivo": "2h 02m",
         "link": "https://www.wikiloc.com/hiking-trails/carezza-catinaccio-rif-coronelle-110902808"
       },
       "geometry": {
@@ -6941,6 +6948,7 @@
         "dislivello_neg": 728,
         "difficolta": "Media",
         "durata": "Giornata Intera",
+        "tempo_effettivo": "6h 07m",
         "link": "https://www.wikiloc.com/hiking-trails/rifugio-paolina-monumento-christomannos-rifugio-fronza-alle-coronelle-carezza-278509656"
       },
       "geometry": {
@@ -8816,8 +8824,9 @@
         "km": 7.6,
         "dislivello": 120,
         "dislivello_neg": 157,
-        "difficolta": "Media",
-        "durata": "Mezza Giornata",
+        "difficolta": "Facile",
+        "durata": "Giornata Intera",
+        "tempo_effettivo": "5h 29m",
         "link": "https://www.wikiloc.com/hiking-trails/rifugio-fuciade-da-passo-san-pellegrino-279549091"
       },
       "geometry": {
@@ -10067,6 +10076,7 @@
         "dislivello_neg": 498,
         "difficolta": "Media",
         "durata": "Giornata Intera",
+        "tempo_effettivo": "7h 45m",
         "link": "https://www.wikiloc.com/hiking-trails/val-venegia-110674226"
       },
       "geometry": {
@@ -10856,6 +10866,7 @@
         "dislivello_neg": 532,
         "difficolta": "Media",
         "durata": "Giornata Intera",
+        "tempo_effettivo": "8h 05m",
         "link": "https://www.wikiloc.com/hiking-trails/vigo-di-fassa-80704947"
       },
       "geometry": {
@@ -11983,8 +11994,9 @@
         "km": 6.2,
         "dislivello": 210,
         "dislivello_neg": 211,
-        "difficolta": "Media",
+        "difficolta": "Facile",
         "durata": "Mezza Giornata",
+        "tempo_effettivo": "1h 45m",
         "link": "https://www.wikiloc.com/hiking-trails/calcata-165534716"
       },
       "geometry": {
@@ -12678,6 +12690,7 @@
         "dislivello_neg": 265,
         "difficolta": "Media",
         "durata": "Giornata Intera",
+        "tempo_effettivo": "5h 30m",
         "link": "https://www.wikiloc.com/hiking-trails/sentiero-di-federico-augusto-di-sassonia-143501001"
       },
       "geometry": {
@@ -13401,8 +13414,9 @@
         "km": 6.7,
         "dislivello": 182,
         "dislivello_neg": 141,
-        "difficolta": "Media",
-        "durata": "Mezza Giornata",
+        "difficolta": "Facile",
+        "durata": "Giornata Intera",
+        "tempo_effettivo": "4h 38m",
         "link": "https://www.wikiloc.com/hiking-trails/sasso-cappello-226081198"
       },
       "geometry": {
