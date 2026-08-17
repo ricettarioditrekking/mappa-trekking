@@ -9,7 +9,8 @@
         "dislivello": 317,
         "dislivello_neg": 361,
         "difficolta": "Facile",
-        "durata": "Mezza Giornata"
+        "durata": "Mezza Giornata",
+        "link": "https://www.wikiloc.com/hiking-trails/passo-oclini-corno-bianco-stadt-278907313"
       },
       "geometry": {
         "type": "LineString",
@@ -1069,7 +1070,8 @@
         "dislivello": 593,
         "dislivello_neg": 592,
         "difficolta": "Media",
-        "durata": "Giornata Intera"
+        "durata": "Giornata Intera",
+        "link": "https://www.wikiloc.com/hiking-trails/saint-marc-jaumegarde-73842424"
       },
       "geometry": {
         "type": "LineString",
@@ -2033,7 +2035,8 @@
         "dislivello": 31,
         "dislivello_neg": 177,
         "difficolta": "Facile",
-        "durata": "Mezza Giornata"
+        "durata": "Mezza Giornata",
+        "link": "https://www.wikiloc.com/hiking-trails/cascate-di-salima-110547155"
       },
       "geometry": {
         "type": "LineString",
@@ -2521,7 +2524,8 @@
         "dislivello": 172,
         "dislivello_neg": 186,
         "difficolta": "Facile",
-        "durata": "Mezza Giornata"
+        "durata": "Mezza Giornata",
+        "link": "https://www.wikiloc.com/hiking-trails/gola-di-rastenbach-279104627"
       },
       "geometry": {
         "type": "LineString",
@@ -3881,7 +3885,8 @@
         "dislivello": 173,
         "dislivello_neg": 819,
         "difficolta": "Facile",
-        "durata": "Giornata Intera"
+        "durata": "Giornata Intera",
+        "link": "https://www.wikiloc.com/hiking-trails/cima-di-col-margherita-e-rifugio-laresei-da-san-pellegrino-sul-sentiero-giallo-blu-279373248"
       },
       "geometry": {
         "type": "LineString",
@@ -5833,7 +5838,8 @@
         "dislivello": 115,
         "dislivello_neg": 116,
         "difficolta": "Facile",
-        "durata": "Giornata Intera"
+        "durata": "Giornata Intera",
+        "link": "https://www.wikiloc.com/hiking-trails/cascate-di-cavalese-110765731"
       },
       "geometry": {
         "type": "LineString",
@@ -6345,7 +6351,8 @@
         "dislivello": 211,
         "dislivello_neg": 19,
         "difficolta": "Facile",
-        "durata": "Mezza Giornata"
+        "durata": "Mezza Giornata",
+        "link": "https://www.wikiloc.com/hiking-trails/carezza-catinaccio-rif-coronelle-110902808"
       },
       "geometry": {
         "type": "LineString",
@@ -6933,7 +6940,8 @@
         "dislivello": 333,
         "dislivello_neg": 728,
         "difficolta": "Facile",
-        "durata": "Giornata Intera"
+        "durata": "Giornata Intera",
+        "link": "https://www.wikiloc.com/hiking-trails/rifugio-paolina-monumento-christomannos-rifugio-fronza-alle-coronelle-carezza-278509656"
       },
       "geometry": {
         "type": "LineString",
@@ -8809,7 +8817,8 @@
         "dislivello": 120,
         "dislivello_neg": 157,
         "difficolta": "Facile",
-        "durata": "Mezza Giornata"
+        "durata": "Mezza Giornata",
+        "link": "https://www.wikiloc.com/hiking-trails/rifugio-fuciade-da-passo-san-pellegrino-279549091"
       },
       "geometry": {
         "type": "LineString",
@@ -10057,7 +10066,8 @@
         "dislivello": 456,
         "dislivello_neg": 498,
         "difficolta": "Media",
-        "durata": "Giornata Intera"
+        "durata": "Giornata Intera",
+        "link": "https://www.wikiloc.com/hiking-trails/val-venegia-110674226"
       },
       "geometry": {
         "type": "LineString",
@@ -10845,7 +10855,8 @@
         "dislivello": 531,
         "dislivello_neg": 532,
         "difficolta": "Media",
-        "durata": "Giornata Intera"
+        "durata": "Giornata Intera",
+        "link": "https://www.wikiloc.com/hiking-trails/vigo-di-fassa-80704947"
       },
       "geometry": {
         "type": "LineString",
@@ -11973,7 +11984,8 @@
         "dislivello": 210,
         "dislivello_neg": 211,
         "difficolta": "Facile",
-        "durata": "Mezza Giornata"
+        "durata": "Mezza Giornata",
+        "link": "https://www.wikiloc.com/hiking-trails/calcata-165534716"
       },
       "geometry": {
         "type": "LineString",
@@ -12665,7 +12677,8 @@
         "dislivello": 282,
         "dislivello_neg": 265,
         "difficolta": "Facile",
-        "durata": "Giornata Intera"
+        "durata": "Giornata Intera",
+        "link": "https://www.wikiloc.com/hiking-trails/sentiero-di-federico-augusto-di-sassonia-143501001"
       },
       "geometry": {
         "type": "LineString",
@@ -13389,7 +13402,8 @@
         "dislivello": 182,
         "dislivello_neg": 141,
         "difficolta": "Facile",
-        "durata": "Mezza Giornata"
+        "durata": "Mezza Giornata",
+        "link": "https://www.wikiloc.com/hiking-trails/sasso-cappello-226081198"
       },
       "geometry": {
         "type": "LineString",
