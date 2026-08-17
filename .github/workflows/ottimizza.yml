@@ -6,6 +6,8 @@ on:
   push:
     paths:
       - 'tracce/**'
+      branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
