@@ -130,6 +130,7 @@ def processa_gpx(file_path):
             "km": km,
             "dislivello": dislivello_pos,
             "dislivello_neg": dislivello_neg,
+            "sforzo": effort_score,  # Adds numerical effort score
             "difficolta": difficolta,
             "durata": durata_cat,
             "tempo_effettivo": tempo_testo,
