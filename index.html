@@ -204,9 +204,8 @@ onEachFeature: function(feature, layer) {
 const p = feature.properties;
 const dislivelloNeg = p.dislivello_neg !== undefined ? p.dislivello_neg : 0;
 const tempoStr = p.tempo_effettivo ? p.tempo_effettivo : p.durata;
-const sforzoStr = (p.sforzo !== undefined && p.sforzo !== null) 
-    ? ' (' + Number(p.sforzo).toFixed(1) + ')' 
-    : '';
+const sforzoVal = (p.sforzo !== undefined && p.sforzo !== null) ? Number(p.sforzo).toFixed(1) : null;
+const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
 
 const linkHtml = p.link 
   ? '<br><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 5px;">Vedi su Wikiloc ↗</a>' 
