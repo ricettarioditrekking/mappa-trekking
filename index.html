@@ -30,6 +30,18 @@ select { width: 100%; padding: 6px; box-sizing: border-box; border-radius: 4px; 
 <div id="sidebar">
 <h3 style="margin: 0 0 5px 0;">Filtri Percorsi</h3>
 
+<!-- Difficoltà (Indice CAI) -->
+<div class="filter-group">
+<label class="filter-title" for="difficolta">Difficoltà:</label>
+<select id="difficolta" onchange="applicaFiltri()">
+<option value="tutte">Tutte</option>
+<option value="Facile">Facile (Sforzo Basso)</option>
+<option value="Media">Media (Sforzo Moderato)</option>
+<option value="Difficile">Difficile (Impegnativo)</option>
+<option value="Molto Difficile">Molto Difficile (Esperti)</option>
+</select>
+</div>
+
 <!-- Distanza (Km) Range -->
 <div class="filter-group">
 <div class="filter-title">
@@ -126,7 +138,7 @@ console.error("GeoJSON load error:", err);
 });
 
 function aggiornaFiltri() {
-// Ensure min sliders do not exceed max sliders
+// Prevent Min slider from surpassing Max slider
 let kmMin = parseInt(document.getElementById('km-min').value);
 let kmMax = parseInt(document.getElementById('km-max').value);
 if (kmMin > kmMax) { kmMin = kmMax; document.getElementById('km-min').value = kmMin; }
@@ -139,7 +151,7 @@ let negMin = parseInt(document.getElementById('neg-min').value);
 let negMax = parseInt(document.getElementById('neg-max').value);
 if (negMin > negMax) { negMin = negMax; document.getElementById('neg-min').value = negMin; }
 
-// Update displayed range texts
+// Update range indicator texts
 document.getElementById('km-val').innerText = kmMin + ' - ' + kmMax + ' km';
 document.getElementById('pos-val').innerText = posMin + ' - ' + posMax + ' m';
 document.getElementById('neg-val').innerText = negMin + ' - ' + negMax + ' m';
@@ -151,6 +163,8 @@ function applicaFiltri() {
 if (!masterTrailsData) return;
 
 if (geojsonLayer) { map.removeLayer(geojsonLayer); }
+
+const diffSelezionata = document.getElementById('difficolta').value;
 
 const kmMin = parseInt(document.getElementById('km-min').value);
 const kmMax = parseInt(document.getElementById('km-max').value);
@@ -170,37 +184,38 @@ filter: function(feature) {
 const p = feature.properties;
 const dislivelloNeg = p.dislivello_neg !== undefined ? p.dislivello_neg : 0;
 
+const rispettaDiff = (diffSelezionata === "tutte" || p.difficolta === diffSelezionata);
 const rispettaKm = (p.km >= kmMin && p.km <= kmMax);
 const rispettaPos = (p.dislivello >= posMin && p.dislivello <= posMax);
 const rispettaNeg = (dislivelloNeg >= negMin && dislivelloNeg <= negMax);
 const rispettaDurata = (durataSelezionata === "tutte" || p.durata === durataSelezionata);
 
-const isMatch = rispettaKm && rispettaPos && rispettaNeg && rispettaDurata;
+const isMatch = rispettaDiff && rispettaKm && rispettaPos && rispettaNeg && rispettaDurata;
 if (isMatch) visibleCount++;
 return isMatch;
 },
 style: function(feature) {
 let lineCol = "green";
-if (feature.properties.dislivello > 400 && feature.properties.dislivello <= 800) lineCol = "orange";
-if (feature.properties.dislivello > 800) lineCol = "red";
+const diff = feature.properties.difficolta;
+if (diff === "Media") lineCol = "orange";
+if (diff === "Difficile") lineCol = "red";
+if (diff === "Molto Difficile") lineCol = "purple";
 return { color: lineCol, weight: 4, opacity: 0.8 };
 },
 onEachFeature: function(feature, layer) {
-  const p = feature.properties;
-  const dislivelloNeg = p.dislivello_neg !== undefined ? p.dislivello_neg : 0;
-  
-  // Format the Wikiloc link button
-  const linkHtml = p.link 
-    ? '<br><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 5px;">Vedi su Wikiloc ↗</a>' 
-    : '';
+const p = feature.properties;
+const dislivelloNeg = p.dislivello_neg !== undefined ? p.dislivello_neg : 0;
 
-  layer.bindPopup(
-    '<strong>' + p.name + '</strong><br>' +
-    'Distanza: ' + p.km + ' km<br>' +
-    'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
-    'Durata: ' + p.durata + 
-    linkHtml
-  );
+const linkHtml = p.link 
+  ? '<br><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 5px;">Vedi su Wikiloc ↗</a>' 
+  : '';
+
+layer.bindPopup('<strong>' + p.name + '</strong><br>' +
+'Distanza: ' + p.km + ' km<br>' +
+'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
+'Difficoltà: ' + p.difficolta + '<br>' +
+'Durata: ' + p.durata + 
+linkHtml);
 }
 }).addTo(map);
 
