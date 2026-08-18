@@ -118,15 +118,15 @@
       filter: drop-shadow(0px 0px 3px currentColor);
     }
 
-    /* FIX DEFINITIVO SCROLLBAR: Blocco rigido dell'altezza del popup */
+    /* GESTIONE SCROLLBAR POPUP: Altezza fissa e scroll interno per evitare uscite dallo schermo */
     .leaflet-popup-content-wrapper {
       max-height: 380px !important;
-      overflow: hidden !important;
       border-radius: 8px;
+      overflow: hidden !important;
     }
 
     .leaflet-popup-content {
-      max-height: 350px !important;
+      max-height: 340px !important;
       overflow-y: auto !important;
       margin: 12px 14px !important;
       padding-right: 6px;
@@ -134,7 +134,7 @@
 
     /* Custom style per il menu a tendina nei popup */
     details {
-      margin-top: 8px;
+      margin-top: 10px;
       background: #eee;
       padding: 6px 8px;
       border-radius: 4px;
@@ -303,16 +303,19 @@
 
       const statoStr = (p.stato === 'fatta') ? 'Completato' : 'Da fare';
 
-      let imgHtml = '';
-      if (p.image_url) {
-        imgHtml = '<br><img src="' + p.image_url + '" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; margin-top:6px;">';
-      }
-
+      // 1. Link Wikiloc (sotto il titolo)
       let linkHtml = '';
       if (p.link) {
-        linkHtml = '<br><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 8px;">Vedi su Wikiloc ↗</a>';
+        linkHtml = '<div style="margin-top: 2px; margin-bottom: 6px;"><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a></div>';
       }
 
+      // 2. Immagine (sotto Wikiloc)
+      let imgHtml = '';
+      if (p.image_url) {
+        imgHtml = '<img src="' + p.image_url + '" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; margin-bottom:8px;">';
+      }
+
+      // 3. Maggiori Dettagli (in fondo)
       const detailsHtml = `
         <details>
           <summary>Maggiori dettagli</summary>
@@ -326,15 +329,16 @@
         </details>
       `;
 
+      // Composizione Finale
       const popupContent = 
         '<strong>' + p.name + '</strong><br>' +
+        linkHtml +
+        imgHtml +
         'Distanza: ' + p.km + ' km<br>' +
         'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
         'Tempo totale: ' + tempoStr + '<br>' +
         'Difficoltà: ' + p.difficolta + sforzoStr +
-        detailsHtml +
-        imgHtml +
-        linkHtml;
+        detailsHtml;
 
       layer.bindPopup(popupContent, {
         autoPanPaddingTopLeft: [20, 80]
