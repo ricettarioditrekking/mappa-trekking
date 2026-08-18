@@ -1,658 +1,682 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mappa Percorsi GPX</title>
-
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      font-family: Arial, sans-serif;
-      display: flex;
-    }
-
-    /* Left Sidebar Styling */
-    #sidebar {
-      width: 320px;
-      height: 100%;
-      background: #f8f9fa;
-      border-right: 1px solid #ddd;
-      padding: 20px;
-      overflow-y: auto;
-      z-index: 1000;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-    }
-
-    #sidebar h2 {
-      margin-top: 0;
-      font-size: 1.2rem;
-      margin-bottom: 20px;
-    }
-
-    .filter-group {
-      margin-bottom: 18px;
-    }
-
-    .filter-group label {
-      display: block;
-      font-weight: bold;
-      font-size: 0.9rem;
-      margin-bottom: 6px;
-    }
-
-    .filter-group select {
-      width: 100%;
-      padding: 6px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
-
-    .checkbox-group {
-      display: flex;
-      gap: 15px;
-      margin-top: 5px;
-    }
-
-    .checkbox-group label {
-      font-weight: normal;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-
-    .range-val {
-      float: right;
-      font-size: 0.85rem;
-      color: #555;
-      font-weight: normal;
-    }
-
-    .range-sliders {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-top: 4px;
-    }
-
-    .slider-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .slider-row span {
-      font-size: 0.75rem;
-      color: #666;
-      width: 30px;
-    }
-
-    .slider-row input[type="range"] {
-      flex: 1;
-    }
-
-    #stats {
-      font-style: italic;
-      color: #777;
-      font-size: 0.85rem;
-      margin-top: 25px;
-    }
-
-    #map {
-      flex: 1;
-      height: 100%;
-    }
-
-    .leaflet-interactive {
-      filter: drop-shadow(0px 0px 3px currentColor);
-    }
-
-    /* =========================================
-       POPUP A DESTRA - DESIGN, MARGINI E SCROLLBAR
-       ========================================= */
-
-    .popup-right {
-      margin-bottom: 0 !important; 
-    }
-
-    .popup-right .leaflet-popup-tip-container {
-      display: none !important;
-    }
-
-    .popup-right .leaflet-popup-content-wrapper {
-      position: relative;
-      border-radius: 12px;
-      padding: 6px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-    }
-
-    .popup-right .leaflet-popup-content-wrapper::before {
-      content: '';
-      position: absolute;
-      left: -6px;
-      bottom: 26px; 
-      width: 14px;
-      height: 14px;
-      background: #ffffff;
-      transform: rotate(45deg);
-      box-shadow: -2px 2px 3px rgba(0,0,0,0.15);
-      z-index: -1;
-      border-radius: 2px;
-    }
-
-    .popup-right .leaflet-popup-content {
-      margin: 16px 22px 16px 16px !important;
-      padding-right: 14px !important;
-      max-height: 320px !important;
-      overflow-y: auto !important;
-      line-height: 1.5;
-      color: #333;
-    }
-
-    .popup-right .leaflet-popup-content::-webkit-scrollbar {
-      width: 6px;
-    }
-    .popup-right .leaflet-popup-content::-webkit-scrollbar-track {
-      background: #f1f1f1; 
-      border-radius: 4px;
-    }
-    .popup-right .leaflet-popup-content::-webkit-scrollbar-thumb {
-      background: #ccc; 
-      border-radius: 4px;
-    }
-    .popup-right .leaflet-popup-content::-webkit-scrollbar-thumb:hover {
-      background: #aaa; 
-    }
-
-    .popup-right .leaflet-popup-close-button {
-      top: 10px !important;
-      right: 10px !important;
-      width: 26px !important;
-      height: 26px !important;
-      line-height: 26px !important;
-      text-align: center !important;
-      font-size: 16px !important;
-      font-weight: bold;
-      color: #555 !important;
-      background: #ffffff !important;
-      border-radius: 50%;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      z-index: 10;
-      text-decoration: none;
-      transition: all 0.2s ease;
-    }
-    .popup-right .leaflet-popup-close-button:hover {
-      color: #000 !important;
-      background: #f4f4f4 !important;
-      transform: scale(1.05);
-    }
-
-    details {
-      margin-top: 12px;
-      background: #f7f7f7;
-      padding: 8px 10px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      border: 1px solid #eaeaea;
-    }
-
-    summary {
-      font-weight: bold;
-      cursor: pointer;
-      color: #222;
-      outline: none;
-    }
-
-    .details-content {
-      margin-top: 8px;
-      color: #444;
-      word-break: break-word;
-    }
-
-    @media (max-width: 768px) {
-      body {
-        flex-direction: column;
-      }
-      #sidebar {
-        width: 100%;
-        height: auto;
-        max-height: 40vh;
-      }
-      #map {
-        height: 60vh;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mappa Percorsi GPX</title>
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+* {
+  box-sizing: border-box;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: Arial, sans-serif;
+  display: flex;
+}
+/* Left Sidebar Styling */
+#sidebar {
+  width: 320px;
+  height: 100%;
+  background: #f8f9fa;
+  border-right: 1px solid #ddd;
+  padding: 20px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+#sidebar h2 {
+  margin-top: 0;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+.filter-group {
+  margin-bottom: 18px;
+}
+.filter-group label {
+  display: block;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+.filter-group select {
+  width: 100%;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+.checkbox-group {
+  display: flex;
+  gap: 15px;
+  margin-top: 5px;
+}
+.checkbox-group label {
+  font-weight: normal;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.range-val {
+  float: right;
+  font-size: 0.85rem;
+  color: #555;
+  font-weight: normal;
+}
+.range-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.slider-row span {
+  font-size: 0.75rem;
+  color: #666;
+  width: 30px;
+}
+.slider-row input[type="range"] {
+  flex: 1;
+}
+#stats {
+  font-style: italic;
+  color: #777;
+  font-size: 0.85rem;
+  margin-top: 25px;
+}
+#map {
+  flex: 1;
+  height: 100%;
+}
+.leaflet-interactive {
+  filter: drop-shadow(0px 0px 3px currentColor);
+}
+/* POPUP DESIGN */
+.popup-right {
+  margin-bottom: 0 !important;
+}
+.popup-right .leaflet-popup-tip-container {
+  display: none !important;
+}
+.popup-right .leaflet-popup-content-wrapper {
+  position: relative;
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+.popup-right .leaflet-popup-content-wrapper::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  bottom: 26px;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  transform: rotate(45deg);
+  z-index: -1;
+  box-shadow: -2px 2px 3px rgba(0,0,0,0.15);
+  border-radius: 2px;
+}
+.popup-right .leaflet-popup-content {
+  margin: 16px 22px 16px 16px !important;
+  padding-right: 14px !important;
+  max-height: 320px !important;
+  overflow-y: auto !important;
+  line-height: 1.5;
+  color: #333;
+}
+.popup-right .leaflet-popup-content::-webkit-scrollbar {
+  width: 6px;
+}
+.popup-right .leaflet-popup-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+.popup-right .leaflet-popup-content::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+.popup-right .leaflet-popup-content::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+.popup-right .leaflet-popup-close-button {
+  top: 10px !important;
+  right: 10px !important;
+  width: 26px !important;
+  height: 26px !important;
+  line-height: 26px !important;
+  text-align: center !important;
+  font-size: 16px !important;
+  font-weight: bold;
+  color: #555 !important;
+  background: #ffffff !important;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 10;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.popup-right .leaflet-popup-close-button:hover {
+  color: #000 !important;
+  background: #f4f4f4 !important;
+  transform: scale(1.05);
+}
+details {
+  margin-top: 12px;
+  background: #f7f7f7;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  border: 1px solid #eaeaea;
+}
+summary {
+  font-weight: bold;
+  cursor: pointer;
+  color: #222;
+  outline: none;
+}
+.details-content {
+  margin-top: 8px;
+  color: #444;
+  word-break: break-word;
+}
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+  }
+  #sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 40vh;
+  }
+  #map {
+    height: 60vh;
+  }
+}
+</style>
 </head>
 <body>
 
-  <!-- Sidebar Filters -->
-  <div id="sidebar">
-    <h2>Filtri Percorsi</h2>
-
-    <div class="filter-group">
-      <label>Stato Percorso:</label>
-      <div class="checkbox-group">
-        <label><input type="checkbox" id="chk-fatte" checked> Completati</label>
-        <label><input type="checkbox" id="chk-non-fatte" checked> Da Fare</label>
-      </div>
+<!-- Sidebar Filters -->
+<div id="sidebar">
+  <h2>Filtri Percorsi</h2>
+  
+  <div class="filter-group">
+    <label>Stato Percorso:</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" id="chk-fatte" checked> Completati</label>
+      <label><input type="checkbox" id="chk-non-fatte" checked> Da Fare</label>
     </div>
-
-    <div class="filter-group">
-      <label for="filter-difficolta">Difficoltà:</label>
-      <select id="filter-difficolta">
-        <option value="Tutte">Tutte</option>
-        <option value="Facile">Facile</option>
-        <option value="Media">Media</option>
-        <option value="Difficile">Difficile</option>
-        <option value="Molto Difficile">Molto Difficile</option>
-      </select>
-    </div>
-
-    <div class="filter-group">
-      <label>Distanza (Km): <span id="val-dist" class="range-val">0 - 50 km</span></label>
-      <div class="range-sliders">
-        <div class="slider-row">
-          <span>Min:</span>
-          <input type="range" id="filter-dist-min" min="0" max="50" value="0" step="1">
-        </div>
-        <div class="slider-row">
-          <span>Max:</span>
-          <input type="range" id="filter-dist-max" min="0" max="50" value="50" step="1">
-        </div>
-      </div>
-    </div>
-
-    <div class="filter-group">
-      <label>Dislivello + (m): <span id="val-dis-pos" class="range-val">0 - 2500 m</span></label>
-      <div class="range-sliders">
-        <div class="slider-row">
-          <span>Min:</span>
-          <input type="range" id="filter-dis-pos-min" min="0" max="2500" value="0" step="50">
-        </div>
-        <div class="slider-row">
-          <span>Max:</span>
-          <input type="range" id="filter-dis-pos-max" min="0" max="2500" value="2500" step="50">
-        </div>
-      </div>
-    </div>
-
-    <div class="filter-group">
-      <label>Dislivello - (m): <span id="val-dis-neg" class="range-val">0 - 2500 m</span></label>
-      <div class="range-sliders">
-        <div class="slider-row">
-          <span>Min:</span>
-          <input type="range" id="filter-dis-neg-min" min="0" max="2500" value="0" step="50">
-        </div>
-        <div class="slider-row">
-          <span>Max:</span>
-          <input type="range" id="filter-dis-neg-max" min="0" max="2500" value="2500" step="50">
-        </div>
-      </div>
-    </div>
-
-    <div class="filter-group">
-      <label for="filter-durata">Categoria Durata:</label>
-      <select id="filter-durata">
-        <option value="Tutte">Tutte</option>
-        <option value="Mezza Giornata">Mezza Giornata</option>
-        <option value="Giornata Intera">Giornata Intera</option>
-      </select>
-    </div>
-
-    <!-- Pannello Meteo Planner -->
-    <div class="filter-group" style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #ddd;">
-      <label style="margin-bottom: 10px; color: #2c3e50;">Pianificatore Meteo:</label>
-      
-      <div style="margin-bottom: 8px;">
-        <label><input type="checkbox" id="chk-autoupdate-meteo" checked> Autoupdate meteo?</label>
-      </div>
-
-      <label for="data-partenza" style="font-size: 0.85rem; font-weight: normal; margin-bottom: 2px;">Data escursione:</label>
-      <input type="date" id="data-partenza" style="width: 100%; margin-bottom: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
-      
-      <label for="ora-partenza" style="font-size: 0.85rem; font-weight: normal; margin-bottom: 2px;">Ora di partenza:</label>
-      <input type="time" id="ora-partenza" value="10:00" style="width: 100%; margin-bottom: 10px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
-      
-      <button id="btn-meteo" style="width: 100%; padding: 8px; background-color: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">
-        Controlla Meteo Percorso
-      </button>
-      
-      <div id="risultato-meteo" style="margin-top: 10px; font-size: 0.85rem;">Seleziona un percorso sulla mappa</div>
-    </div>
-
-    <div id="stats">Mostrati: 0 di 0 percorsi</div>
   </div>
 
-  <div id="map"></div>
+  <div class="filter-group">
+    <label for="filter-difficolta">Difficoltà:</label>
+    <select id="filter-difficolta">
+      <option value="Tutte">Tutte</option>
+      <option value="Facile">Facile</option>
+      <option value="Media">Media</option>
+      <option value="Difficile">Difficile</option>
+      <option value="Molto Difficile">Molto Difficile</option>
+    </select>
+  </div>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <div class="filter-group">
+    <label>Distanza (Km): <span id="val-dist" class="range-val">0 - 50 km</span></label>
+    <div class="range-sliders">
+      <div class="slider-row">
+        <span>Min:</span>
+        <input type="range" id="filter-dist-min" min="0" max="50" value="0" step="1">
+      </div>
+      <div class="slider-row">
+        <span>Max:</span>
+        <input type="range" id="filter-dist-max" min="0" max="50" value="50" step="1">
+      </div>
+    </div>
+  </div>
 
-  <script>
-    // Imposta automaticamente la data di domani all'avvio
-    const domani = new Date();
-    domani.setDate(domani.getDate() + 1);
-    const anno = domani.getFullYear();
-    const mese = String(domani.getMonth() + 1).padStart(2, '0');
-    const giorno = String(domani.getDate()).padStart(2, '0');
-    document.getElementById('data-partenza').value = `${anno}-${mese}-${giorno}`;
+  <div class="filter-group">
+    <label>Dislivello + (m): <span id="val-dis-pos" class="range-val">0 - 2500 m</span></label>
+    <div class="range-sliders">
+      <div class="slider-row">
+        <span>Min:</span>
+        <input type="range" id="filter-dis-pos-min" min="0" max="2500" value="0" step="50">
+      </div>
+      <div class="slider-row">
+        <span>Max:</span>
+        <input type="range" id="filter-dis-pos-max" min="0" max="2500" value="2500" step="50">
+      </div>
+    </div>
+  </div>
 
-    let allData = null;
-    let geoJsonLayer = null;
-    let selectedLayerForMeteo = null;
+  <div class="filter-group">
+    <label>Dislivello - (m): <span id="val-dis-neg" class="range-val">0 - 2500 m</span></label>
+    <div class="range-sliders">
+      <div class="slider-row">
+        <span>Min:</span>
+        <input type="range" id="filter-dis-neg-min" min="0" max="2500" value="0" step="50">
+      </div>
+      <div class="slider-row">
+        <span>Max:</span>
+        <input type="range" id="filter-dis-neg-max" min="0" max="2500" value="2500" step="50">
+      </div>
+    </div>
+  </div>
 
-    const map = L.map('map').setView([46.4983, 11.3548], 10);
+  <div class="filter-group">
+    <label for="filter-durata">Categoria Durata:</label>
+    <select id="filter-durata">
+      <option value="Tutte">Tutte</option>
+      <option value="Mezza Giornata">Mezza Giornata</option>
+      <option value="Giornata Intera">Giornata Intera</option>
+    </select>
+  </div>
 
-    const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      maxZoom: 17,
-      attribution: 'Map data: © OpenStreetMap contributors, SRTS | Map style: © OpenTopoMap (CC-BY-SA)'
-    }).addTo(map);
+  <!-- Pannello Meteo Planner -->
+  <div class="filter-group" style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #ddd;">
+    <label style="margin-bottom: 10px; color: #2c3e50;">Pianificatore Meteo:</label>
+    <div style="margin-bottom: 8px;">
+      <label><input type="checkbox" id="chk-autoupdate-meteo" checked> Autoupdate meteo percorsi?</label>
+    </div>
+    <label for="data-partenza" style="font-size: 0.85rem; font-weight: normal; margin-bottom: 2px;">Data escursione:</label>
+    <input type="date" id="data-partenza" style="width: 100%; margin-bottom: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+    
+    <label for="ora-partenza" style="font-size: 0.85rem; font-weight: normal; margin-bottom: 2px;">Ora di partenza percorsi:</label>
+    <input type="time" id="ora-partenza" value="10:00" style="width: 100%; margin-bottom: 10px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+    
+    <button id="btn-meteo" style="width: 100%; padding: 8px; background-color: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+      Controlla Meteo Percorso
+    </button>
+    <div id="risultato-meteo" style="margin-top: 8px; margin-bottom: 15px; font-size: 0.85rem;">Seleziona un percorso sulla mappa</div>
 
-    // Layer Radar Precipitazioni corretto e robusto con RainViewer
-    const precipitationLayer = L.tileLayer('', {
-      attribution: 'Radar meteo: © <a href="https://www.rainviewer.com" target="_blank">RainViewer</a>',
-      opacity: 0.6,
-      zIndex: 400,
-      tileSize: 256
+    <!-- CONTROLLO SLIDER ORARIO REGIONALE -->
+    <div id="regione-meteo-controls" style="background: #edf2f7; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e0;">
+      <label style="color: #2d3748; font-size: 0.85rem; margin-bottom: 4px;"><strong>Meteo Regione (Passi 3h):</strong></label>
+      <div style="font-size: 0.85rem; color: #4a5568; margin-bottom: 4px;">Ora selezionata: <span id="time-display" style="font-weight: bold;">12:00</span></div>
+      <input type="range" id="time-slider" min="0" max="7" value="4" step="1" style="width: 100%; margin: 5px 0;" oninput="changeForecastStep(this.value)">
+      <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #718096;">
+        <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>21:00</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="stats">Mostrati: 0 di 0 percorsi</div>
+</div>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Imposta automaticamente la data di domani all'avvio
+const domani = new Date();
+domani.setDate(domani.getDate() + 1);
+const anno = domani.getFullYear();
+const mese = String(domani.getMonth() + 1).padStart(2, '0');
+const giorno = String(domani.getDate()).padStart(2, '0');
+document.getElementById('data-partenza').value = `${anno}-${mese}-${giorno}`;
+
+let allData = null;
+let geoJsonLayer = null;
+let selectedLayerForMeteo = null;
+
+// Gestione Griglia Meteo Regionale
+const regionalWeatherGroup = L.layerGroup();
+const intervals = [0, 3, 6, 9, 12, 15, 18, 21];
+let currentStepIndex = 4; // default index 4 -> 12:00
+let globalWeatherDataCache = [];
+
+const map = L.map('map').setView([46.4983, 11.3548], 10);
+const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+  maxZoom: 17,
+  attribution: 'Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)'
+}).addTo(map);
+
+const baseMaps = {
+  "OpenTopoMap": topoLayer
+};
+const overlayMaps = {
+  "Meteo Previsionale Regione": regionalWeatherGroup
+};
+L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+regionalWeatherGroup.addTo(map);
+
+// Ricalcola la griglia quando la mappa viene spostata o zoomata
+map.on('moveend', () => {
+  if (map.hasLayer(regionalWeatherGroup)) {
+    updateRegionalWeather();
+  }
+});
+
+map.on('overlayadd', (e) => {
+  if (e.name === "Meteo Previsionale Regione") {
+    updateRegionalWeather();
+  }
+});
+
+function getNeonColor(difficolta) {
+  switch (difficolta) {
+    case 'Facile': return '#00FF66';
+    case 'Media': return '#00E5FF';
+    case 'Difficile': return '#FF5F00';
+    case 'Molto Difficile': return '#FF007F';
+    default: return '#00FF66';
+  }
+}
+
+function getMeteoEmoji(pioggiaProb) {
+  if (pioggiaProb > 60) return '🌧️';
+  if (pioggiaProb > 30) return '⛅';
+  return '☀️';
+}
+
+function onEachFeature(feature, layer) {
+  const p = feature.properties;
+  const dislivelloNeg = (p.dislivello_neg !== undefined && p.dislivello_neg !== null) ? p.dislivello_neg : 0;
+  const tempoStr = p.tempo_effettivo || p.durata || "";
+  const sforzoVal = (p.sforzo !== undefined && p.sforzo !== null && !isNaN(p.sforzo)) ? Number(p.sforzo).toFixed(1) : null;
+  const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : "";
+  const statoStr = (p.stato === 'fatta') ? 'Completato' : 'Da fare';
+  
+  let linkHtml = p.link ? `<div style="margin-top: 4px; margin-bottom: 10px;"><a href="${p.link}" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a></div>` : '';
+  let imgHtml = p.image_url ? `<img src="${p.image_url}" style="width:100%; border-radius:6px; margin-bottom:8px;">` : "";
+  
+  const detailsHtml = `<details><summary>Maggiori dettagli</summary><div class="details-content"><strong>Stato: </strong>${statoStr}<br><strong>Data: </strong>${p.datatrekking || 'N/D'}<br><strong>In movimento: </strong>${p.tempo_movimento || 'N/D'}<br><strong>In pausa: </strong>${p.tempopausa || 'N/D'}<br><strong>File: </strong><code>${p.file_location || 'N/D'}</code></div></details>`;
+  
+  const popupContent = `<strong>${p.name}</strong><br>${linkHtml}${imgHtml}Distanza: ${p.km} km<br>Dislivello: +${p.dislivello}m / -${dislivelloNeg}m<br>Tempo totale: ${tempoStr}<br>Difficoltà: ${p.difficolta}${sforzoStr}<br>${detailsHtml}`;
+  
+  layer.bindPopup(popupContent, {
+    className: 'popup-right',
+    minWidth: 285,
+    maxWidth: 285,
+    offset: [0, 0],
+    autoPanPadding: [50, 50]
+  });
+
+  layer.on('popupopen', function(e) {
+    selectedLayerForMeteo = layer;
+    const autoUpdateEnabled = document.getElementById('chk-autoupdate-meteo').checked;
+    if (autoUpdateEnabled) {
+      caricaMeteoTraccia();
+    }
+    const popup = e.popup;
+    const detailsElem = popup.getElement().querySelector('details');
+    if (detailsElem) {
+      detailsElem.addEventListener('toggle', function() {
+        popup.update();
+      });
+    }
+  });
+
+  layer.on({
+    mouseover: function(e) {
+      if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
+        this.openPopup();
+      }
+    }
+  });
+}
+
+async function caricaMeteoTraccia() {
+  const containerRisultato = document.getElementById('risultato-meteo');
+  if (!selectedLayerForMeteo) {
+    containerRisultato.innerHTML = "Seleziona prima un percorso sulla mappa!";
+    return;
+  }
+  const nomePercorso = selectedLayerForMeteo.feature.properties.name || "Percorso selezionato";
+  const dataInput = document.getElementById('data-partenza').value;
+  const oraInput = document.getElementById('ora-partenza').value;
+  
+  if (!dataInput) {
+    containerRisultato.innerHTML = "Seleziona una data per l'escursione.";
+    return;
+  }
+  
+  const coords = selectedLayerForMeteo.feature.geometry.coordinates;
+  const lon = coords[0][0];
+  const lat = coords[0][1];
+  const pProps = selectedLayerForMeteo.feature.properties;
+  
+  const stringaTempoTotale = pProps.tempo_effettivo || pProps.durata || "2h";
+  let durataOre = 2;
+  const matchOre = stringaTempoTotale.match(/(\d+)\s*h/i);
+  if (matchOre) {
+    durataOre = parseInt(matchOre[1], 10);
+  } else {
+    const oreNum = parseFloat(stringaTempoTotale);
+    if (!isNaN(oreNum) && oreNum > 0) {
+      durataOre = Math.round(oreNum);
+    }
+  }
+  durataOre = Math.max(1, durataOre);
+
+  containerRisultato.innerHTML = "Caricamento meteo in corso...";
+
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability&timezone=auto`;
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    const oraFormattata = oraInput.split(':')[0].padStart(2, '0');
+    const indexInizio = data.hourly.time.findIndex(t => t.startsWith(`${dataInput}T${oraFormattata}`));
+    
+    if (indexInizio !== -1) {
+      let orarioDettagliHtml = `<div style="background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd; max-height: 180px; overflow-y: auto;"><strong style="color: #2c3e50; font-size: 0.9rem; display: block; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 3px;">📍 ${nomePercorso}</strong><strong>Previsioni ora per ora:</strong><br>`;
+      let sommaPioggia = 0;
+      let minTemp = Infinity;
+      let maxTemp = -Infinity;
+      let conteggioSlot = 0;
+
+      for (let i = 0; i <= durataOre; i++) {
+        const currentIndex = indexInizio + i;
+        if (currentIndex < data.hourly.time.length) {
+          const oraSlot = data.hourly.time[currentIndex].split('T')[1];
+          const tempSlot = data.hourly.temperature_2m[currentIndex];
+          const pioggiaSlot = data.hourly.precipitation_probability[currentIndex];
+          
+          sommaPioggia += pioggiaSlot;
+          if (tempSlot < minTemp) minTemp = tempSlot;
+          if (tempSlot > maxTemp) maxTemp = tempSlot;
+          conteggioSlot++;
+
+          let etichettaTempo = (i === 0) ? "Partenza" : (i === durataOre ? "Arrivo" : `+${i}h`);
+          orarioDettagliHtml += `• <strong>${oraSlot}</strong> (${etichettaTempo}): ${tempSlot}°C, 💧${pioggiaSlot}%<br>`;
+        }
+      }
+      orarioDettagliHtml += `</div>`;
+
+      const mediaPioggia = conteggioSlot > 0 ? (sommaPioggia / conteggioSlot) : 0;
+      const emojiMedio = getMeteoEmoji(mediaPioggia);
+      const summaryText = conteggioSlot > 0 ? `${emojiMedio} (${minTemp}°C - ${maxTemp}°C)` : `${emojiMedio} (N/D)`;
+
+      containerRisultato.innerHTML = `<div style="margin-bottom: 6px; font-weight: bold;">Meteo previsto per la traccia: ${summaryText}</div>` + orarioDettagliHtml;
+    } else {
+      containerRisultato.innerHTML = "Orario non disponibile nelle previsioni della traccia.";
+    }
+  } catch (error) {
+    console.error("Errore nel recupero meteo:", error);
+    containerRisultato.innerHTML = "Errore di connessione al servizio meteo della traccia.";
+  }
+}
+
+function updateRegionalWeather() {
+  regionalWeatherGroup.clearLayers();
+  const selectedDate = document.getElementById('data-partenza').value;
+  if (!selectedDate) return;
+
+  const bounds = map.getBounds();
+  const southWest = bounds.getSouthWest();
+  const northEast = bounds.getNorthEast();
+
+  const latPoints = 4;
+  const lonPoints = 4;
+  const latStep = (northEast.lat - southWest.lat) / latPoints;
+  const lonStep = (northEast.lng - southWest.lng) / lonPoints;
+
+  let latitudeQueries = [];
+  let longitudeQueries = [];
+
+  for (let i = 0.5; i < latPoints; i++) {
+    for (let j = 0.5; j < lonPoints; j++) {
+      latitudeQueries.push(southWest.lat + (i * latStep));
+      longitudeQueries.push(southWest.lng + (j * lonStep));
+    }
+  }
+
+  const latString = latitudeQueries.join(',');
+  const lonString = longitudeQueries.join(',');
+
+  const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latString}&longitude=${lonString}&start_date=${selectedDate}&end_date=${selectedDate}&hourly=temperature_2m,precipitation,precipitation_probability&timezone=auto`;
+
+  fetch(apiUrl)
+    .then(res => res.json())
+    .then(data => {
+      globalWeatherDataCache = Array.isArray(data) ? data : [data];
+      renderWeatherGrid();
+    })
+    .catch(err => console.error("Download griglia meteo fallito:", err));
+}
+
+function renderWeatherGrid() {
+  regionalWeatherGroup.clearLayers();
+  if (!globalWeatherDataCache.length) return;
+
+  const targetHour = intervals[currentStepIndex];
+
+  globalWeatherDataCache.forEach(location => {
+    const lat = location.latitude;
+    const lon = location.longitude;
+    const temperature = location.hourly.temperature_2m[targetHour];
+    const rain = location.hourly.precipitation[targetHour];
+    const rainProb = location.hourly.precipitation_probability[targetHour];
+
+    let areaColor = '#33cc33';
+    let statusSymbol = '☀️';
+
+    if (rain > 0 || rainProb > 40) {
+      areaColor = rain > 1 ? '#ff3333' : '#ff9900';
+      statusSymbol = '🌧️';
+    }
+
+    const currentZoom = map.getZoom();
+    const circleRadius = currentZoom > 11 ? 2000 : (currentZoom > 9 ? 6000 : 15000);
+
+    const gridCircle = L.circle([lat, lon], {
+      radius: circleRadius,
+      color: areaColor,
+      fillColor: areaColor,
+      fillOpacity: 0.25,
+      weight: 1
     });
 
-    // Fetch asincrono dei dati radar per inizializzare correttamente il tile layer
-    fetch('https://api.rainviewer.com/public/weather-maps.json')
-      .then(response => response.json())
-      .then(data => {
-        if (data && data.radar && data.radar.past && data.radar.past.length > 0) {
-          const latestTimestamp = data.radar.past[data.radar.past.length - 1].time;
-          precipitationLayer.setUrl(`https://tile.rainviewer.com/v2/radar/${latestTimestamp}/256/{z}/{x}/{y}/2/1_1.png`);
-        }
-      })
-      .catch(err => console.error("Errore caricamento radar meteo:", err));
+    gridCircle.bindPopup(`<strong>Meteo Area di Regione</strong><br/><strong>Orario:</strong> ${targetHour}:00<br/><strong>Condizione:</strong> ${statusSymbol} ${rain > 0 ? `Pioggia (${rain}mm)` : 'Asciutto'}<br/><strong>Probabilità Pioggia:</strong> ${rainProb}%<br/><strong>Temperatura Stg:</strong> ${temperature}°C`);
 
-    const baseMaps = {
-      "OpenTopoMap": topoLayer
-    };
+    regionalWeatherGroup.addLayer(gridCircle);
+  });
+}
 
-    const overlayMaps = {
-      "🌧️ Radar Precipitazioni": precipitationLayer
-    };
+function changeForecastStep(value) {
+  currentStepIndex = parseInt(value, 10);
+  document.getElementById('time-display').innerText = `${String(intervals[currentStepIndex]).padStart(2, '0')}:00`;
+  renderWeatherGrid();
+}
 
-    L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+function applyFilters() {
+  if (!allData) return;
 
-    function getNeonColor(difficolta) {
-      switch (difficolta) {
-        case 'Facile': return '#00FF66';
-        case 'Media': return '#00E5FF';
-        case 'Difficile': return '#FF5F00';
-        case 'Molto Difficile': return '#FF007F';
-        default: return '#00FF66';
-      }
+  const diffVal = document.getElementById('filter-difficolta').value;
+  const durataVal = document.getElementById('filter-durata').value;
+  const showFatte = document.getElementById('chk-fatte').checked;
+  const showNonFatte = document.getElementById('chk-non-fatte').checked;
+
+  let distMin = parseFloat(document.getElementById('filter-dist-min').value);
+  let distMax = parseFloat(document.getElementById('filter-dist-max').value);
+  let disPosMin = parseFloat(document.getElementById('filter-dis-pos-min').value);
+  let disPosMax = parseFloat(document.getElementById('filter-dis-pos-max').value);
+  let disNegMin = parseFloat(document.getElementById('filter-dis-neg-min').value);
+  let disNegMax = parseFloat(document.getElementById('filter-dis-neg-max').value);
+
+  if (distMin > distMax) [distMin, distMax] = [distMax, distMin];
+  if (disPosMin > disPosMax) [disPosMin, disPosMax] = [disPosMax, disPosMin];
+  if (disNegMin > disNegMax) [disNegMin, disNegMax] = [disNegMax, disNegMin];
+
+  document.getElementById('val-dist').textContent = `${distMin} - ${distMax} km`;
+  document.getElementById('val-dis-pos').textContent = `${disPosMin} - ${disPosMax} m`;
+  document.getElementById('val-dis-neg').textContent = `${disNegMin} - ${disNegMax} m`;
+
+  const filteredFeatures = allData.features.filter(feature => {
+    const p = feature.properties;
+    const isFatta = p.stato === 'fatta';
+    const matchStato = (isFatta && showFatte) || (!isFatta && showNonFatte);
+    const matchDiff = (diffVal === 'Tutte' || p.difficolta === diffVal);
+    const matchDist = (p.km >= distMin && p.km <= distMax);
+    const matchDisPos = (p.dislivello >= disPosMin && p.dislivello <= disPosMax);
+    const matchDisNeg = ((p.dislivello_neg || 0) >= disNegMin && (p.dislivello_neg || 0) <= disNegMax);
+    const matchDurata = (durataVal === 'Tutte' || p.durata === durataVal);
+
+    return matchStato && matchDiff && matchDist && matchDisPos && matchDisNeg && matchDurata;
+  });
+
+  if (geoJsonLayer) map.removeLayer(geoJsonLayer);
+
+  geoJsonLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
+    style: function(feature) {
+      return {
+        color: getNeonColor(feature.properties.difficolta),
+        weight: 5,
+        opacity: 0.95,
+        lineCap: 'round',
+        lineJoin: 'round'
+      };
+    },
+    onEachFeature: onEachFeature
+  }).addTo(map);
+
+  document.getElementById('stats').textContent = `Mostrati: ${filteredFeatures.length} di ${allData.features.length} percorsi`;
+}
+
+// Listeners dei filtri
+document.getElementById('filter-difficolta').addEventListener('change', applyFilters);
+document.getElementById('filter-durata').addEventListener('change', applyFilters);
+document.getElementById('chk-fatte').addEventListener('change', applyFilters);
+document.getElementById('chk-non-fatte').addEventListener('change', applyFilters);
+
+['filter-dist-min', 'filter-dist-max', 'filter-dis-pos-min', 'filter-dis-pos-max', 'filter-dis-neg-min', 'filter-dis-neg-max'].forEach(id => {
+  document.getElementById(id).addEventListener('input', applyFilters);
+});
+
+document.getElementById('btn-meteo').addEventListener('click', caricaMeteoTraccia);
+
+document.getElementById('data-partenza').addEventListener('change', () => {
+  updateRegionalWeather();
+  if (document.getElementById('chk-autoupdate-meteo').checked && selectedLayerForMeteo) {
+    caricaMeteoTraccia();
+  }
+});
+
+document.getElementById('ora-partenza').addEventListener('change', () => {
+  if (document.getElementById('chk-autoupdate-meteo').checked && selectedLayerForMeteo) {
+    caricaMeteoTraccia();
+  }
+});
+
+// Caricamento del GeoJSON dei percorsi
+fetch('percorsi.geojson?v=' + new Date().getTime())
+  .then(response => response.json())
+  .then(data => {
+    allData = data;
+    applyFilters();
+    if (geoJsonLayer && geoJsonLayer.getBounds().isValid()) {
+      map.fitBounds(geoJsonLayer.getBounds(), { padding: [30, 30] });
     }
-
-    function getMeteoEmoji(pioggiaProb) {
-      if (pioggiaProb > 60) return '🌧️';
-      if (pioggiaProb > 30) return '⛅';
-      return '☀️';
-    }
-
-    function onEachFeature(feature, layer) {
-      const p = feature.properties;
-      const dislivelloNeg = (p.dislivello_neg !== undefined && p.dislivello_neg !== null) ? p.dislivello_neg : 0;
-      const tempoStr = p.tempo_effettivo || p.durata || '';
-      const sforzoVal = (p.sforzo !== undefined && p.sforzo !== null && !isNaN(p.sforzo)) ? Number(p.sforzo).toFixed(1) : null;
-      const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
-      const statoStr = (p.stato === 'fatta') ? 'Completato' : 'Da fare';
-
-      let linkHtml = p.link ? `<div style="margin-top: 4px; margin-bottom: 10px;">` +
-                              `<a href="${p.link}" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a>` +
-                              `</div>` : '';
-
-      let imgHtml = p.image_url ? '<img src="' + p.image_url + '" style="width:100%; max-height:150px; object-fit:cover; border-radius:6px; margin-bottom:12px;">' : '';
-
-      const detailsHtml = `
-        <details>
-          <summary>Maggiori dettagli</summary>
-          <div class="details-content">
-            <strong>Stato:</strong> ${statoStr}<br>
-            <strong>Data:</strong> ${p.data_trekking || 'N/D'}<br>
-            <strong>In movimento:</strong> ${p.tempo_movimento || 'N/D'}<br>
-            <strong>In pausa:</strong> ${p.tempo_pausa || 'N/D'}<br>
-            <strong>File:</strong> <code>${p.file_location || 'N/D'}</code>
-          </div>
-        </details>
-      `;
-
-      const popupContent = 
-        '<div style="font-size: 1.05rem; font-weight: bold; margin-bottom: 6px; padding-right: 25px; line-height: 1.3;">' + p.name + '</div>' +
-        linkHtml + imgHtml +
-        'Distanza: ' + p.km + ' km<br>' +
-        'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
-        'Tempo totale: ' + tempoStr + '<br>' +
-        'Difficoltà: ' + p.difficolta + sforzoStr + '<br>' +
-        detailsHtml;
-
-      layer.bindPopup(popupContent, {
-        className: 'popup-right',
-        minWidth: 285,
-        maxWidth: 285,
-        offset: [168, 31],
-        autoPanPadding: [50, 50]
-      });
-
-      layer.on('popupopen', function(e) {
-        selectedLayerForMeteo = layer;
-        
-        const autoUpdateEnabled = document.getElementById('chk-autoupdate-meteo').checked;
-        if (autoUpdateEnabled) {
-          caricaMeteoTraccia();
-        }
-
-        const popup = e.popup;
-        const detailsElem = popup.getElement().querySelector('details');
-        if (detailsElem) {
-          detailsElem.addEventListener('toggle', function() {
-            popup.update(); 
-          });
-        }
-      });
-
-      layer.on({
-        mouseover: function(e) {
-          if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
-            this.openPopup();
-          }
-        }
-      });
-    }
-
-    async function caricaMeteoTraccia() {
-      const containerRisultato = document.getElementById('risultato-meteo');
-
-      if (!selectedLayerForMeteo) {
-        containerRisultato.innerHTML = "<span style='color: #c0392b;'>Seleziona prima un percorso sulla mappa!</span>";
-        return;
-      }
-
-      const nomePercorso = selectedLayerForMeteo.feature.properties.name || "Percorso selezionato";
-      const dataInput = document.getElementById('data-partenza').value;
-      const oraInput = document.getElementById('ora-partenza').value;
-
-      if (!dataInput) {
-        containerRisultato.innerHTML = "<span style='color: #c0392b;'>Seleziona una data per l'escursione.</span>";
-        return;
-      }
-
-      const coords = selectedLayerForMeteo.feature.geometry.coordinates;
-      const lon = coords[0][0];
-      const lat = coords[0][1];
-
-      const pProps = selectedLayerForMeteo.feature.properties;
-      const stringaTempoTotale = pProps.tempo_effettivo || pProps.durata || "2h";
-      
-      let durataOre = 2;
-      const matchOre = stringaTempoTotale.match(/(\d+)\s*h/i);
-      if (matchOre) {
-        durataOre = parseInt(matchOre[1], 10);
-      } else {
-        const oreNum = parseFloat(stringaTempoTotale);
-        if (!isNaN(oreNum) && oreNum > 0) {
-          durataOre = Math.round(oreNum);
-        }
-      }
-      durataOre = Math.max(1, durataOre);
-
-      containerRisultato.innerHTML = "Caricamento meteo in corso...";
-
-      try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability&timezone=auto`;
-        
-        const response = await fetch(url);
-        const data = await response.json();
-
-        const oraFormattata = oraInput.split(':')[0].padStart(2, '0');
-        const indexInizio = data.hourly.time.findIndex(t => t.startsWith(`${dataInput}T${oraFormattata}`));
-
-        if (indexInizio !== -1) {
-          let orarioDettagliHtml = `<div style="background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd; max-height: 180px; overflow-y: auto;">`;
-          orarioDettagliHtml += `<strong style="color: #2c3e50; font-size: 0.9rem; display: block; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 3px;">📍 ${nomePercorso}</strong>`;
-          orarioDettagliHtml += `<strong>Previsioni ora per ora:</strong><br>`;
-
-          let sommaPioggia = 0;
-          let minTemp = Infinity;
-          let maxTemp = -Infinity;
-          let conteggioSlot = 0;
-
-          for (let i = 0; i <= durataOre; i++) {
-            const currentIndex = indexInizio + i;
-            if (currentIndex < data.hourly.time.length) {
-              const oraSlot = data.hourly.time[currentIndex].split('T')[1];
-              const tempSlot = data.hourly.temperature_2m[currentIndex];
-              const pioggiaSlot = data.hourly.precipitation_probability[currentIndex];
-              
-              sommaPioggia += pioggiaSlot;
-              if (tempSlot < minTemp) minTemp = tempSlot;
-              if (tempSlot > maxTemp) maxTemp = tempSlot;
-              conteggioSlot++;
-
-              let etichettaTempo = (i === 0) ? "Partenza" : (i === durataOre ? "Arrivo" : `+${i}h`);
-              orarioDettagliHtml += `• <strong>${oraSlot}</strong> (${etichettaTempo}): ${tempSlot}°C, 💧 ${pioggiaSlot}%<br>`;
-            }
-          }
-          orarioDettagliHtml += `</div>`;
-
-          const mediaPioggia = conteggioSlot > 0 ? (sommaPioggia / conteggioSlot) : 0;
-          const emojiMedio = getMeteoEmoji(mediaPioggia);
-          const summaryText = conteggioSlot > 0 ? `${emojiMedio} (${minTemp}°C - ${maxTemp}°C)` : `${emojiMedio} (N/D)`;
-
-          containerRisultato.innerHTML = `<div style="margin-bottom: 6px; font-weight: bold;">Meteo previsto: ${summaryText}</div>` + orarioDettagliHtml;
-
-        } else {
-          containerRisultato.innerHTML = "<span style='color: #d35400;'>Orario non disponibile nelle previsioni.</span>";
-        }
-
-      } catch (error) {
-        console.error("Errore nel recupero meteo:", error);
-        containerRisultato.innerHTML = "<span style='color: #c0392b;'>Errore di connessione al servizio meteo.</span>";
-      }
-    }
-
-    document.getElementById('btn-meteo').addEventListener('click', caricaMeteoTraccia);
-
-    document.getElementById('data-partenza').addEventListener('change', () => {
-      if (document.getElementById('chk-autoupdate-meteo').checked && selectedLayerForMeteo) {
-        caricaMeteoTraccia();
-      }
-    });
-    document.getElementById('ora-partenza').addEventListener('change', () => {
-      if (document.getElementById('chk-autoupdate-meteo').checked && selectedLayerForMeteo) {
-        caricaMeteoTraccia();
-      }
-    });
-
-    function applyFilters() {
-      if (!allData) return;
-
-      const diffVal = document.getElementById('filter-difficolta').value;
-      const durataVal = document.getElementById('filter-durata').value;
-      const showFatte = document.getElementById('chk-fatte').checked;
-      const showNonFatte = document.getElementById('chk-non-fatte').checked;
-
-      let distMin = parseFloat(document.getElementById('filter-dist-min').value);
-      let distMax = parseFloat(document.getElementById('filter-dist-max').value);
-      let disPosMin = parseFloat(document.getElementById('filter-dis-pos-min').value);
-      let disPosMax = parseFloat(document.getElementById('filter-dis-pos-max').value);
-      let disNegMin = parseFloat(document.getElementById('filter-dis-neg-min').value);
-      let disNegMax = parseFloat(document.getElementById('filter-dis-neg-max').value);
-
-      if (distMin > distMax) [distMin, distMax] = [distMax, distMin];
-      if (disPosMin > disPosMax) [disPosMin, disPosMax] = [disPosMax, disPosMin];
-      if (disNegMin > disNegMax) [disNegMin, disNegMax] = [disNegMax, disNegMin];
-
-      document.getElementById('val-dist').textContent = `${distMin} - ${distMax} km`;
-      document.getElementById('val-dis-pos').textContent = `${disPosMin} - ${disPosMax} m`;
-      document.getElementById('val-dis-neg').textContent = `${disNegMin} - ${disNegMax} m`;
-
-      const filteredFeatures = allData.features.filter(feature => {
-        const p = feature.properties;
-        
-        const isFatta = p.stato === 'fatta';
-        const matchStato = (isFatta && showFatte) || (!isFatta && showNonFatte);
-
-        const matchDiff = (diffVal === 'Tutte' || p.difficolta === diffVal);
-        const matchDist = (p.km >= distMin && p.km <= distMax);
-        const matchDisPos = (p.dislivello >= disPosMin && p.dislivello <= disPosMax);
-        const matchDisNeg = ((p.dislivello_neg || 0) >= disNegMin && (p.dislivello_neg || 0) <= disNegMax);
-        const matchDurata = (durataVal === 'Tutte' || p.durata === durataVal);
-
-        return matchStato && matchDiff && matchDist && matchDisPos && matchDisNeg && matchDurata;
-      });
-
-      if (geoJsonLayer) map.removeLayer(geoJsonLayer);
-
-      geoJsonLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
-        style: function(feature) {
-          return {
-            color: getNeonColor(feature.properties.difficolta),
-            weight: 5,
-            opacity: 0.95,
-            lineCap: 'round',
-            lineJoin: 'round'
-          };
-        },
-        onEachFeature: onEachFeature
-      }).addTo(map);
-
-      document.getElementById('stats').textContent = `Mostrati: ${filteredFeatures.length} di ${allData.features.length} percorsi`;
-    }
-
-    document.getElementById('filter-difficolta').addEventListener('change', applyFilters);
-    document.getElementById('filter-durata').addEventListener('change', applyFilters);
-    document.getElementById('chk-fatte').addEventListener('change', applyFilters);
-    document.getElementById('chk-non-fatte').addEventListener('change', applyFilters);
-
-    ['filter-dist-min', 'filter-dist-max', 'filter-dis-pos-min', 'filter-dis-pos-max', 'filter-dis-neg-min', 'filter-dis-neg-max'].forEach(id => {
-      document.getElementById(id).addEventListener('input', applyFilters);
-    });
-
-    fetch('percorsi.geojson?v=' + new Date().getTime())
-      .then(response => response.json())
-      .then(data => {
-        allData = data;
-        applyFilters();
-
-        if (geoJsonLayer && geoJsonLayer.getBounds().isValid()) {
-          map.fitBounds(geoJsonLayer.getBounds(), { padding: [30, 30] });
-        }
-      })
-      .catch(error => console.error('Error loading GeoJSON:', error));
-  </script>
+    updateRegionalWeather();
+  })
+  .catch(error => console.error('Error loading GeoJSON:', error));
+</script>
 </body>
 </html>
