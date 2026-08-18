@@ -118,7 +118,7 @@
       filter: drop-shadow(0px 0px 3px currentColor);
     }
 
-    /* GESTIONE SCROLLBAR POPUP: Altezza fissa e scroll interno */
+    /* GESTIONE SCROLLBAR POPUP */
     .leaflet-popup-content-wrapper {
       max-height: 380px !important;
       border-radius: 8px;
@@ -130,6 +130,16 @@
       overflow-y: auto !important;
       margin: 12px 14px !important;
       padding-right: 6px;
+    }
+
+    /* POSIZIONAMENTO CHEVRON A SINISTRA */
+    .leaflet-popup-tip-container {
+      left: -20px !important;
+      top: 50% !important;
+      margin-top: -10px !important;
+      width: 20px !important;
+      height: 20px !important;
+      transform: rotate(90deg);
     }
 
     /* Custom style per il menu a tendina nei popup */
@@ -340,9 +350,10 @@
         'Difficoltà: ' + p.difficolta + sforzoStr +
         detailsHtml;
 
-      // offset: [160, 0] posiziona il popup a destra del punto di ancoraggio
+      // Popup configurato sul lato destro con offset e direzione dedicati
       layer.bindPopup(popupContent, {
-        offset: [160, 0],
+        direction: 'right',
+        offset: [15, 0],
         autoPanPaddingTopLeft: [20, 20]
       });
 
