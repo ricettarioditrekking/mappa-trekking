@@ -327,7 +327,7 @@
         Controlla Meteo Percorso
       </button>
       
-      <div id="risultato-meteo" style="margin-top: 10px; font-size: 0.85rem;"></div>
+      <div id="risultato-meteo" style="margin-top: 10px; font-size: 0.85rem;">Seleziona un percorso sulla mappa</div>
     </div>
 
     <div id="stats">Mostrati: 0 di 0 percorsi</div>
@@ -456,6 +456,7 @@
         return;
       }
 
+      const nomePercorso = selectedLayerForMeteo.feature.properties.name || "Percorso selezionato";
       const dataInput = document.getElementById('data-partenza').value;
       const oraInput = document.getElementById('ora-partenza').value;
 
@@ -470,16 +471,14 @@
       const lon = coords[0][0];
       const lat = coords[0][1];
 
-      // Calcola la durata totale leggendo direttamente il tempo totale del percorso (es. "tempo_effettivo" o "durata")
       const pProps = selectedLayerForMeteo.feature.properties;
       const stringaTempoTotale = pProps.tempo_effettivo || pProps.durata || "2h";
       
-      let durataOre = 2; // Default di sicurezza
+      let durataOre = 2;
       const matchOre = stringaTempoTotale.match(/(\d+)\s*h/i);
       if (matchOre) {
         durataOre = parseInt(matchOre[1], 10);
       } else {
-        // Fallback numerico generico o conversione minuti se presenti
         const oreNum = parseFloat(stringaTempoTotale);
         if (!isNaN(oreNum) && oreNum > 0) {
           durataOre = Math.round(oreNum);
@@ -510,6 +509,7 @@
 
           const htmlRisultato = `
             <div style="background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+              <strong style="color: #2c3e50; font-size: 0.9rem; display: block; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 3px;">📍 ${nomePercorso}</strong>
               <strong>Meteo (${dataInput} ${oraInput}):</strong><br>
               • <strong>Partenza:</strong> ${tempPartenza}°C, Pioggia: ${pioggiaPartenza}%<br>
               • <strong>Arrivo est. (+${durataOre}h):</strong> ${tempArrivo}°C, Pioggia: ${pioggiaArrivo}%
