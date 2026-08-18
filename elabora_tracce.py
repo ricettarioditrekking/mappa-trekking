@@ -55,6 +55,7 @@ def processa_gpx(file_path):
     total_dist_km = 0.0
     last_lat, last_lon = None, None
 
+    # Estrazione punti
     for trkpt in root.findall('.//{*}trkpt'):
         lat = float(trkpt.attrib['lat'])
         lon = float(trkpt.attrib['lon'])
@@ -82,11 +83,11 @@ def processa_gpx(file_path):
     km = round(total_dist_km, 1)
     dislivello_pos, dislivello_neg = calcola_dislivelli_wikiloc(elevations, window_size=9)
 
+    # Tempo stimato o effettivo
     if len(timestamps) >= 2:
-        elapsed = timestamps[-1] - timestamps[0]
-        total_minutes = int(elapsed.total_seconds() / 60)
-        hours = total_minutes // 60
-        minutes = total_minutes % 60
+        total_minutes = (timestamps[-1] - timestamps[0]).total_seconds() / 60
+        hours = int(total_minutes // 60)
+        minutes = int(total_minutes % 60)
         tempo_testo = f"{hours}h {minutes:02d}m"
         durata_cat = "Mezza Giornata" if total_minutes <= 240 else "Giornata Intera"
     else:
@@ -105,6 +106,7 @@ def processa_gpx(file_path):
     else:
         difficolta = "Molto Difficile"
 
+    # Nome traccia
     name_elem = root.find('.//{*}trk/{*}name')
     if name_elem is not None and name_elem.text:
         track_name = name_elem.text.strip()
@@ -112,20 +114,29 @@ def processa_gpx(file_path):
         base = os.path.basename(file_path)
         track_name = os.path.splitext(base)[0].replace('_', ' ').replace('-', ' ').title()
 
+    # Link Wikiloc
     wikiloc_link = None
     link_elem = root.find('.//{*}link')
     if link_elem is not None and 'href' in link_elem.attrib:
         wikiloc_link = link_elem.attrib['href']
 
-    # Check for same-named local image file
+    # Controllo immagine associata
     base_path = os.path.splitext(file_path)[0]
     image_url = None
-
     for ext in ['.jpg', '.jpeg', '.png', '.JPG', '.JPEG', '.PNG']:
         candidate = base_path + ext
         if os.path.exists(candidate):
             image_url = candidate.replace('\\', '/')
             break
+
+    # Riconoscimento dello STATO (fatta / non_fatta) in base al percorso della cartella
+    normalized_path = file_path.replace('\\', '/').lower()
+    if '/fatte/' in normalized_path or normalized_path.startswith('fatte/'):
+        stato = "fatta"
+    elif '/non_fatte/' in normalized_path or normalized_path.startswith('non_fatte/'):
+        stato = "non_fatta"
+    else:
+        stato = "non_fatta"  # Valore di default se si trova nella radice di tracce/
 
     return {
         "type": "Feature",
@@ -138,6 +149,7 @@ def processa_gpx(file_path):
             "sforzo": effort_score,
             "durata": durata_cat,
             "tempo_effettivo": tempo_testo,
+            "stato": stato,
             "link": wikiloc_link,
             "image_url": image_url
         },
@@ -151,15 +163,15 @@ def processa_gpx(file_path):
 def main():
     gpx_files = glob.glob('**/*.gpx', recursive=True)
     if not gpx_files:
-        print("No .gpx files found!")
+        print("Nessun file .gpx trovato!")
         return
 
     features = [processa_gpx(f) for f in gpx_files]
-    
+
     with open("percorsi.geojson", "w", encoding="utf-8") as f:
         json.dump({"type": "FeatureCollection", "features": features}, f, ensure_ascii=False, indent=2)
 
-    print(f"Generated percorsi.geojson for {len(features)} tracks.")
+    print(f"Generato percorsi.geojson per {len(features)} percorsi.")
 
 
 if __name__ == "__main__":
