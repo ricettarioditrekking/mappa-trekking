@@ -7,159 +7,35 @@
 <!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-* {
-  box-sizing: border-box;
-}
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-  font-family: Arial, sans-serif;
-  display: flex;
-}
-#sidebar {
-  width: 320px;
-  height: 100%;
-  background: #f8f9fa;
-  border-right: 1px solid #ddd;
-  padding: 20px;
-  overflow-y: auto;
-  z-index: 1000;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-}
-#sidebar h2 {
-  margin-top: 0;
-  font-size: 1.2rem;
-  margin-bottom: 20px;
-}
-.filter-group {
-  margin-bottom: 18px;
-}
-.filter-group label {
-  display: block;
-  font-weight: bold;
-  font-size: 0.9rem;
-  margin-bottom: 6px;
-}
-.filter-group select {
-  width: 100%;
-  padding: 6px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-.checkbox-group {
-  display: flex;
-  gap: 15px;
-  margin-top: 5px;
-}
-.checkbox-group label {
-  font-weight: normal;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-.range-val {
-  float: right;
-  font-size: 0.85rem;
-  color: #555;
-  font-weight: normal;
-}
-.range-sliders {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 4px;
-}
-.slider-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.slider-row span {
-  font-size: 0.75rem;
-  color: #666;
-  width: 30px;
-}
-.slider-row input[type="range"] {
-  flex: 1;
-}
-#stats {
-  font-style: italic;
-  color: #777;
-  font-size: 0.85rem;
-  margin-top: 25px;
-}
-#map {
-  flex: 1;
-  height: 100%;
-}
-.leaflet-interactive {
-  filter: drop-shadow(0px 0px 3px currentColor);
-  transition: stroke-width 0.15s ease;
-}
-.popup-right {
-  margin-bottom: 0 !important;
-}
-.popup-right .leaflet-popup-tip-container {
-  display: none !important;
-}
-.popup-right .leaflet-popup-content-wrapper {
-  position: relative;
-  border-radius: 12px;
-  padding: 6px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-}
-.popup-right .leaflet-popup-content-wrapper::before {
-  content: "";
-  position: absolute;
-  left: -6px;
-  bottom: 26px;
-  width: 14px;
-  height: 14px;
-  background: #ffffff;
-  transform: rotate(45deg);
-  z-index: -1;
-  box-shadow: -2px 2px 3px rgba(0,0,0,0.15);
-  border-radius: 2px;
-}
-.popup-right .leaflet-popup-content {
-  margin: 16px 22px 16px 16px !important;
-  padding-right: 14px !important;
-  max-height: 320px !important;
-  overflow-y: auto !important;
-  line-height: 1.5;
-  color: #333;
-}
-details {
-  margin-top: 12px;
-  background: #f7f7f7;
-  padding: 8px 10px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  border: 1px solid #eaeaea;
-}
-summary {
-  font-weight: bold;
-  cursor: pointer;
-  color: #222;
-}
-.details-content {
-  margin-top: 8px;
-  color: #444;
-  word-break: break-word;
-}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: Arial, sans-serif; display: flex; }
+#sidebar { width: 320px; height: 100%; background: #f8f9fa; border-right: 1px solid #ddd; padding: 20px; overflow-y: auto; z-index: 1000; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+#sidebar h2 { margin-top: 0; font-size: 1.2rem; margin-bottom: 20px; }
+.filter-group { margin-bottom: 18px; }
+.filter-group label { display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 6px; }
+.filter-group select { width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ccc; }
+.checkbox-group { display: flex; gap: 15px; margin-top: 5px; }
+.checkbox-group label { font-weight: normal; font-size: 0.85rem; cursor: pointer; }
+.range-val { float: right; font-size: 0.85rem; color: #555; font-weight: normal; }
+.range-sliders { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.slider-row { display: flex; align-items: center; gap: 8px; }
+.slider-row span { font-size: 0.75rem; color: #666; width: 30px; }
+.slider-row input[type="range"] { flex: 1; }
+#stats { font-style: italic; color: #777; font-size: 0.85rem; margin-top: 25px; }
+#map { flex: 1; height: 100%; }
+.leaflet-interactive { filter: drop-shadow(0px 0px 3px currentColor); transition: stroke-width 0.15s ease; }
+.popup-right { margin-bottom: 0 !important; }
+.popup-right .leaflet-popup-tip-container { display: none !important; }
+.popup-right .leaflet-popup-content-wrapper { position: relative; border-radius: 12px; padding: 6px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+.popup-right .leaflet-popup-content-wrapper::before { content: ""; position: absolute; left: -6px; bottom: 26px; width: 14px; height: 14px; background: #ffffff; transform: rotate(45deg); z-index: -1; box-shadow: -2px 2px 3px rgba(0,0,0,0.15); border-radius: 2px; }
+.popup-right .leaflet-popup-content { margin: 16px 22px 16px 16px !important; padding-right: 14px !important; max-height: 320px !important; overflow-y: auto !important; line-height: 1.5; color: #333; }
+details { margin-top: 12px; background: #f7f7f7; padding: 8px 10px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #eaeaea; }
+summary { font-weight: bold; cursor: pointer; color: #222; }
+.details-content { margin-top: 8px; color: #444; word-break: break-word; }
 @media (max-width: 768px) {
-  body {
-    flex-direction: column;
-  }
-  #sidebar {
-    width: 100%;
-    height: auto;
-    max-height: 40vh;
-  }
-  #map {
-    height: 60vh;
-  }
+  body { flex-direction: column; }
+  #sidebar { width: 100%; height: auto; max-height: 40vh; }
+  #map { height: 60vh; }
 }
 </style>
 </head>
@@ -190,42 +66,24 @@ summary {
   <div class="filter-group">
     <label>Distanza (Km): <span id="val-dist" class="range-val">0 - 50 km</span></label>
     <div class="range-sliders">
-      <div class="slider-row">
-        <span>Min:</span>
-        <input type="range" id="filter-dist-min" min="0" max="50" value="0" step="1">
-      </div>
-      <div class="slider-row">
-        <span>Max:</span>
-        <input type="range" id="filter-dist-max" min="0" max="50" value="50" step="1">
-      </div>
+      <div class="slider-row"><span>Min:</span><input type="range" id="filter-dist-min" min="0" max="50" value="0" step="1"></div>
+      <div class="slider-row"><span>Max:</span><input type="range" id="filter-dist-max" min="0" max="50" value="50" step="1"></div>
     </div>
   </div>
 
   <div class="filter-group">
     <label>Dislivello + (m): <span id="val-dis-pos" class="range-val">0 - 2500 m</span></label>
     <div class="range-sliders">
-      <div class="slider-row">
-        <span>Min:</span>
-        <input type="range" id="filter-dis-pos-min" min="0" max="2500" value="0" step="50">
-      </div>
-      <div class="slider-row">
-        <span>Max:</span>
-        <input type="range" id="filter-dis-pos-max" min="0" max="2500" value="2500" step="50">
-      </div>
+      <div class="slider-row"><span>Min:</span><input type="range" id="filter-dis-pos-min" min="0" max="2500" value="0" step="50"></div>
+      <div class="slider-row"><span>Max:</span><input type="range" id="filter-dis-pos-max" min="0" max="2500" value="2500" step="50"></div>
     </div>
   </div>
 
   <div class="filter-group">
     <label>Dislivello - (m): <span id="val-dis-neg" class="range-val">0 - 2500 m</span></label>
     <div class="range-sliders">
-      <div class="slider-row">
-        <span>Min:</span>
-        <input type="range" id="filter-dis-neg-min" min="0" max="2500" value="0" step="50">
-      </div>
-      <div class="slider-row">
-        <span>Max:</span>
-        <input type="range" id="filter-dis-neg-max" min="0" max="2500" value="2500" step="50">
-      </div>
+      <div class="slider-row"><span>Min:</span><input type="range" id="filter-dis-neg-min" min="0" max="2500" value="0" step="50"></div>
+      <div class="slider-row"><span>Max:</span><input type="range" id="filter-dis-neg-max" min="0" max="2500" value="2500" step="50"></div>
     </div>
   </div>
 
@@ -289,18 +147,18 @@ const intervals = [0, 3, 6, 9, 12, 15, 18, 21];
 let currentStepIndex = 4;
 let globalWeatherDataCache = [];
 
-// Inizializzazione Heatmap corretta per visibilità ottimale
+// Configurazione sfumatura continua Heatmap
 let heatLayer = L.heatLayer([], {
-  radius: 40,
-  blur: 25,
-  maxZoom: 14,
+  radius: 70,        // Raggio ampio per unire i punti vicini
+  blur: 45,          // Sfumatura morbida senza bordi netti
+  maxZoom: 12,
   max: 100,
-  minOpacity: 0.3,
+  minOpacity: 0.2,
   gradient: {
-    0.05: '#00bfff', // Azzurro (Inizio pioggia/Probabilità debole)
-    0.35: '#0000ff', // Blu
-    0.70: '#ffaa00', // Arancione
-    1.00: '#ff0000'  // Rosso
+    0.15: '#00bfff', // Azzurro (Precipitazione leggera/bassa probabilità)
+    0.45: '#0000ff', // Blu
+    0.75: '#ffaa00', // Arancione
+    1.00: '#ff0000'  // Rosso (Pioggia forte/Temporali)
   }
 });
 
@@ -320,17 +178,12 @@ let moveTimeout;
 map.on('moveend', () => {
   if (map.hasLayer(heatLayer)) {
     clearTimeout(moveTimeout);
-    moveTimeout = setTimeout(() => {
-      updateRegionalWeather();
-    }, 300);
+    moveTimeout = setTimeout(() => { updateRegionalWeather(); }, 300);
   }
 });
 
-// Forza aggiornamento quando il layer della Heatmap viene riattivato dal toggle
 map.on('overlayadd', function(e) {
-  if (e.layer === heatLayer) {
-    updateRegionalWeather();
-  }
+  if (e.layer === heatLayer) { updateRegionalWeather(); }
 });
 
 function getNeonColor(difficolta) {
@@ -346,11 +199,9 @@ function getNeonColor(difficolta) {
 function getMeteoEmoji(weatherCode) {
   switch (weatherCode) {
     case 0: return '☀️';
-    case 1: 
-    case 2: return '⛅';
+    case 1: case 2: return '⛅';
     case 3: return '☁️';
-    case 45:
-    case 48: return '🌫️';
+    case 45: case 48: return '🌫️';
     case 51: case 53: case 55: case 56: case 57: 
     case 61: case 63: case 65: case 66: case 67: return '🌧️';
     case 71: case 73: case 75: case 77: case 85: case 86: return '❄️';
@@ -360,7 +211,6 @@ function getMeteoEmoji(weatherCode) {
   }
 }
 
-// Punteggio gravità meteo per calcolare la condizione peggiore dell'escursione
 function getMeteoSeverity(emoji) {
   switch (emoji) {
     case '⚡': return 8;
@@ -392,7 +242,6 @@ function onEachFeature(feature, layer) {
   
   layer.bindPopup(popupContent, { className: 'popup-right', minWidth: 285, maxWidth: 285 });
 
-  // Evento HOVER: seleziona il percorso e aggiorna il meteo
   layer.on('mouseover', function(e) {
     selectedLayerForMeteo = layer;
     layer.setStyle({ weight: 8, opacity: 1 });
@@ -423,12 +272,18 @@ async function caricaMeteoTraccia() {
   
   if (!dataInput) return;
   
-  const coords = selectedLayerForMeteo.feature.geometry.coordinates;
-  const lon = coords[0][0];
-  const lat = coords[0][1];
+  // Estrazione coordinate infallibile tramite il centro/bounds di Leaflet
+  let lat, lon;
+  if (selectedLayerForMeteo.getBounds) {
+    const center = selectedLayerForMeteo.getBounds().getCenter();
+    lat = center.lat;
+    lon = center.lng;
+  } else {
+    containerRisultato.innerHTML = "Coordinate non valide.";
+    return;
+  }
+
   const pProps = selectedLayerForMeteo.feature.properties;
-  
-  // Calcolo durata stimata per l'escursione
   const stringaTempoTotale = pProps.tempo_effettivo || pProps.durata || "3h";
   let durataOre = 3;
   const matchOre = stringaTempoTotale.match(/(\d+)\s*h/i);
@@ -438,8 +293,9 @@ async function caricaMeteoTraccia() {
   containerRisultato.innerHTML = "Caricamento meteo...";
 
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability,weathercode&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&hourly=temperature_2m,precipitation_probability,weathercode&timezone=auto`;
     const response = await fetch(url);
+    if (!response.ok) throw new Error("Errore API");
     const data = await response.json();
     
     const oraFormattata = oraInput.split(':')[0].padStart(2, '0');
@@ -460,8 +316,6 @@ async function caricaMeteoTraccia() {
           const wCode = data.hourly.weathercode[currentIndex];
           
           let emojiSlot = getMeteoEmoji(wCode);
-          
-          // Correzione Ibrida: Se la probabilità di pioggia super la soglia del 50%, forza pioggia
           if (pioggiaSlot >= 50 && (emojiSlot === '☁️' || emojiSlot === '⛅' || emojiSlot === '☀️')) {
             emojiSlot = '🌧️';
           }
@@ -482,6 +336,8 @@ async function caricaMeteoTraccia() {
       orarioDettagliHtml += `</div>`;
 
       containerRisultato.innerHTML = `<div style="margin-bottom: 6px; font-weight: bold;">Meteo previsto per la traccia: ${peggiorEmoji} (${minTemp}°C - ${maxTemp}°C)</div>` + orarioDettagliHtml;
+    } else {
+      containerRisultato.innerHTML = "Nessun dato per l'orario selezionato.";
     }
   } catch (error) {
     containerRisultato.innerHTML = "Errore durante il recupero dei dati meteo.";
@@ -497,8 +353,9 @@ function updateRegionalWeather() {
   const southWest = bounds.getSouthWest();
   const northEast = bounds.getNorthEast();
 
-  const latPoints = 9;
-  const lonPoints = 9;
+  // Griglia 7x7 bilanciata per fondere i punti senza bloccare l'API
+  const latPoints = 7;
+  const lonPoints = 7;
   const latStep = (northEast.lat - southWest.lat) / latPoints;
   const lonStep = (northEast.lng - southWest.lng) / lonPoints;
 
@@ -533,8 +390,7 @@ function renderWeatherGrid() {
     const lon = location.longitude;
     const rainProb = location.hourly.precipitation_probability[targetHour] || 0;
     
-    // Mostra punti sfumati a partire dal 5% di probabilità
-    if (rainProb > 5) {
+    if (rainProb > 10) {
       heatPoints.push([lat, lon, rainProb]);
     }
   });
@@ -589,11 +445,7 @@ function applyFilters() {
 
   geoJsonLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
     style: function(feature) {
-      return {
-        color: getNeonColor(feature.properties.difficolta),
-        weight: 5,
-        opacity: 0.95
-      };
+      return { color: getNeonColor(feature.properties.difficolta), weight: 5, opacity: 0.95 };
     },
     onEachFeature: onEachFeature
   }).addTo(map);
