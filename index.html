@@ -118,17 +118,18 @@
       filter: drop-shadow(0px 0px 3px currentColor);
     }
 
-    /* Forza altezza massima relativa allo schermo ed abilita scrollbar se necessario */
+    /* FIX DEFINITIVO SCROLLBAR: Blocco rigido dell'altezza del popup */
     .leaflet-popup-content-wrapper {
-      max-height: 80vh !important;
+      max-height: 380px !important;
+      overflow: hidden !important;
       border-radius: 8px;
     }
 
     .leaflet-popup-content {
-      max-height: 75vh !important;
+      max-height: 350px !important;
       overflow-y: auto !important;
       margin: 12px 14px !important;
-      padding-right: 4px;
+      padding-right: 6px;
     }
 
     /* Custom style per il menu a tendina nei popup */
@@ -313,7 +314,7 @@
       }
 
       const detailsHtml = `
-        <details class="popup-details">
+        <details>
           <summary>Maggiori dettagli</summary>
           <div class="details-content">
             <strong>Stato:</strong> ${statoStr}<br>
@@ -336,29 +337,13 @@
         linkHtml;
 
       layer.bindPopup(popupContent, {
-        autoPan: true,
-        autoPanPaddingTopLeft: [20, 20],
-        autoPanPaddingBottomRight: [20, 20]
+        autoPanPaddingTopLeft: [20, 80]
       });
 
       layer.on({
         mouseover: function(e) {
           if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
             this.openPopup();
-          }
-        },
-        popupopen: function(e) {
-          const popupNode = e.popup.getElement();
-          const detailsNode = popupNode ? popupNode.querySelector('.popup-details') : null;
-          
-          if (detailsNode) {
-            detailsNode.addEventListener('toggle', function() {
-              // Quando la tendina si apre o si chiude, diciamo a Leaflet di aggiornare ed effettuare il centramento automatico
-              e.popup.update();
-              setTimeout(() => {
-                map.panTo(e.popup.getLatLng(), { animate: true });
-              }, 50);
-            });
           }
         }
       });
