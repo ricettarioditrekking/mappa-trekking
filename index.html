@@ -118,44 +118,49 @@
       filter: drop-shadow(0px 0px 3px currentColor);
     }
 
-    /* GESTIONE SCROLLBAR POPUP */
+    /* =========================================
+       POPUP A DESTRA CON FRECCIA FISSA INFALLIBILE
+       ========================================= */
+       
+    /* 1. Nascondiamo completamente la freccia nativa difettosa di Leaflet */
+    .popup-right .leaflet-popup-tip-container {
+      display: none !important; 
+    }
+
+    /* 2. Struttura del blocco bianco principale */
     .popup-right .leaflet-popup-content-wrapper {
+      width: 300px !important;
       max-height: 380px !important;
       border-radius: 8px;
-      overflow: hidden !important;
-      box-shadow: 0 3px 14px rgba(0,0,0,0.25);
+      padding: 0;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      position: relative; /* Indispensabile per ancorare la freccia custom */
+    }
+
+    /* 3. La NUOVA freccia incollata al blocco e fissa verso il basso */
+    .popup-right .leaflet-popup-content-wrapper::before {
+      content: '';
+      position: absolute;
+      left: -6px;            /* Sporge millimetricamente a sinistra dal popup */
+      bottom: 14px;          /* DISTANZA FISSA DAL BASSO! Così aprendo i dettagli non slitterà mai! */
+      width: 16px;
+      height: 16px;
+      background: #ffffff;
+      transform: rotate(45deg);
+      box-shadow: -2px 2px 4px rgba(0,0,0,0.15); /* Ombreggiatura calibrata */
+      z-index: -1;           /* La fa fondere dietro al riquadro nascondendone metà */
+      border-radius: 2px;
     }
 
     .popup-right .leaflet-popup-content {
+      margin: 14px !important;
       max-height: 340px !important;
       overflow-y: auto !important;
-      margin: 12px 14px !important;
       padding-right: 6px;
+      line-height: 1.4;
     }
 
-    /* CHEVRON SALDATO AL POPUP E FISSO IN ALTO (NON SI SPOSTA PIÙ) */
-    .popup-right .leaflet-popup-tip-container {
-      left: -12px !important;
-      top: 30px !important; /* Fisso in pixel per evitare lo scorrimento verticale */
-      bottom: auto !important;
-      margin: 0 !important;
-      width: 12px !important;
-      height: 24px !important;
-      overflow: hidden !important;
-      pointer-events: none;
-    }
-
-    .popup-right .leaflet-popup-tip {
-      width: 12px !important;
-      height: 12px !important;
-      padding: 0 !important;
-      margin: 6px 0 0 6px !important;
-      transform: rotate(45deg) !important;
-      background: #ffffff !important;
-      box-shadow: -2px 2px 3px rgba(0,0,0,0.15) !important;
-    }
-
-    /* Custom style per il menu a tendina nei popup */
+    /* Stili interni del popup */
     details {
       margin-top: 10px;
       background: #eee;
@@ -172,7 +177,6 @@
 
     .details-content {
       margin-top: 6px;
-      line-height: 1.4;
       color: #444;
       word-break: break-all;
     }
@@ -198,7 +202,7 @@
   <div id="sidebar">
     <h2>Filtri Percorsi</h2>
 
-    <!-- Stato Percorso (Fatta / Non Fatta) -->
+    <!-- Stato Percorso -->
     <div class="filter-group">
       <label>Stato Percorso:</label>
       <div class="checkbox-group">
@@ -219,7 +223,7 @@
       </select>
     </div>
 
-    <!-- Distanza (Double Slider) -->
+    <!-- Distanza -->
     <div class="filter-group">
       <label>Distanza (Km): <span id="val-dist" class="range-val">0 - 50 km</span></label>
       <div class="range-sliders">
@@ -234,7 +238,7 @@
       </div>
     </div>
 
-    <!-- Dislivello + (Double Slider) -->
+    <!-- Dislivello + -->
     <div class="filter-group">
       <label>Dislivello + (m): <span id="val-dis-pos" class="range-val">0 - 2500 m</span></label>
       <div class="range-sliders">
@@ -249,7 +253,7 @@
       </div>
     </div>
 
-    <!-- Dislivello - (Double Slider) -->
+    <!-- Dislivello - -->
     <div class="filter-group">
       <label>Dislivello - (m): <span id="val-dis-neg" class="range-val">0 - 2500 m</span></label>
       <div class="range-sliders">
@@ -299,16 +303,11 @@
     // 3. Neon Color Mapping
     function getNeonColor(difficolta) {
       switch (difficolta) {
-        case 'Facile':
-          return '#00FF66';
-        case 'Media':
-          return '#00E5FF';
-        case 'Difficile':
-          return '#FF5F00';
-        case 'Molto Difficile':
-          return '#FF007F';
-        default:
-          return '#00FF66';
+        case 'Facile': return '#00FF66';
+        case 'Media': return '#00E5FF';
+        case 'Difficile': return '#FF5F00';
+        case 'Molto Difficile': return '#FF007F';
+        default: return '#00FF66';
       }
     }
 
@@ -320,25 +319,21 @@
       const tempoStr = p.tempo_effettivo || p.durata || '';
 
       const sforzoVal = (p.sforzo !== undefined && p.sforzo !== null && !isNaN(p.sforzo)) 
-        ? Number(p.sforzo).toFixed(1) 
-        : null;
+        ? Number(p.sforzo).toFixed(1) : null;
       const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
 
       const statoStr = (p.stato === 'fatta') ? 'Completato' : 'Da fare';
 
-      // Link Wikiloc
       let linkHtml = '';
       if (p.link) {
         linkHtml = '<div style="margin-top: 2px; margin-bottom: 6px;"><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a></div>';
       }
 
-      // Immagine
       let imgHtml = '';
       if (p.image_url) {
         imgHtml = '<img src="' + p.image_url + '" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; margin-bottom:8px;">';
       }
 
-      // Maggiori Dettagli
       const detailsHtml = `
         <details>
           <summary>Maggiori dettagli</summary>
@@ -352,21 +347,21 @@
         </details>
       `;
 
-      // Composizione
       const popupContent = 
         '<strong>' + p.name + '</strong><br>' +
-        linkHtml +
-        imgHtml +
+        linkHtml + imgHtml +
         'Distanza: ' + p.km + ' km<br>' +
         'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
         'Tempo totale: ' + tempoStr + '<br>' +
         'Difficoltà: ' + p.difficolta + sforzoStr +
         detailsHtml;
 
-      // Offset calibrato perfettamente sul punto dello chevron
+      // offset: [X, Y]. X = 165 sposta tutto a destra oltre la metà del popup per farlo affiancare. Y = 22 lo abbassa centrando al millimetro la nuova freccia al tracciato.
       layer.bindPopup(popupContent, {
         className: 'popup-right',
-        offset: [15, -35],
+        minWidth: 300,
+        maxWidth: 300,
+        offset: [165, 22],
         autoPanPaddingTopLeft: [20, 20]
       });
 
@@ -379,7 +374,7 @@
       });
     }
 
-    // 5. Filtering Logic with Min/Max Bounds
+    // 5. Filtering Logic
     function applyFilters() {
       if (!allData) return;
 
@@ -418,9 +413,7 @@
         return matchStato && matchDiff && matchDist && matchDisPos && matchDisNeg && matchDurata;
       });
 
-      if (geoJsonLayer) {
-        map.removeLayer(geoJsonLayer);
-      }
+      if (geoJsonLayer) map.removeLayer(geoJsonLayer);
 
       geoJsonLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
         style: function(feature) {
@@ -438,7 +431,7 @@
       document.getElementById('stats').textContent = `Mostrati: ${filteredFeatures.length} di ${allData.features.length} percorsi`;
     }
 
-    // 6. Event Listeners for Filters
+    // 6. Event Listeners
     document.getElementById('filter-difficolta').addEventListener('change', applyFilters);
     document.getElementById('filter-durata').addEventListener('change', applyFilters);
     document.getElementById('chk-fatte').addEventListener('change', applyFilters);
