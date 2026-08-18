@@ -358,31 +358,34 @@
       attribution: 'Map data: © OpenStreetMap contributors, SRTS | Map style: © OpenTopoMap (CC-BY-SA)'
     }).addTo(map);
 
-    // Integrazione Radar Precipitazioni in tempo reale via RainViewer
+    // Layer Radar Precipitazioni corretto e robusto con RainViewer
+    const precipitationLayer = L.tileLayer('', {
+      attribution: 'Radar meteo: © <a href="https://www.rainviewer.com" target="_blank">RainViewer</a>',
+      opacity: 0.6,
+      zIndex: 400,
+      tileSize: 256
+    });
+
+    // Fetch asincrono dei dati radar per inizializzare correttamente il tile layer
     fetch('https://api.rainviewer.com/public/weather-maps.json')
       .then(response => response.json())
       .then(data => {
         if (data && data.radar && data.radar.past && data.radar.past.length > 0) {
           const latestTimestamp = data.radar.past[data.radar.past.length - 1].time;
-          
-          const precipitationLayer = L.tileLayer(`https://tile.rainviewer.com/v2/radar/${latestTimestamp}/256/{z}/{x}/{y}/2/1_1.png`, {
-            attribution: 'Radar meteo: © RainViewer',
-            opacity: 0.6,
-            zIndex: 400
-          });
-
-          const baseMaps = {
-            "OpenTopoMap": topoLayer
-          };
-
-          const overlayMaps = {
-            "🌧️ Radar Precipitazioni": precipitationLayer
-          };
-          
-          L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+          precipitationLayer.setUrl(`https://tile.rainviewer.com/v2/radar/${latestTimestamp}/256/{z}/{x}/{y}/2/1_1.png`);
         }
       })
       .catch(err => console.error("Errore caricamento radar meteo:", err));
+
+    const baseMaps = {
+      "OpenTopoMap": topoLayer
+    };
+
+    const overlayMaps = {
+      "🌧️ Radar Precipitazioni": precipitationLayer
+    };
+
+    L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
 
     function getNeonColor(difficolta) {
       switch (difficolta) {
