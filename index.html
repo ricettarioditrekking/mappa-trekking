@@ -368,6 +368,12 @@
       }
     }
 
+    function getMeteoEmoji(pioggiaProb, temp) {
+      if (pioggiaProb > 60) return '🌧️';
+      if (pioggiaProb > 30) return '⛅';
+      return '☀️';
+    }
+
     function onEachFeature(feature, layer) {
       const p = feature.properties;
       const dislivelloNeg = (p.dislivello_neg !== undefined && p.dislivello_neg !== null) ? p.dislivello_neg : 0;
@@ -376,7 +382,13 @@
       const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
       const statoStr = (p.stato === 'fatta') ? 'Completato' : 'Da fare';
 
-      let linkHtml = p.link ? '<div style="margin-top: 4px; margin-bottom: 10px;"><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a></div>' : '';
+      const fileKey = p.file_location ? p.file_location.replace(/[^a-zA-Z0-9]/g, '_') : Math.random();
+
+      let linkHtml = p.link ? `<div style="margin-top: 4px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">` +
+                              `<a href="${p.link}" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a>` +
+                              `<span id="popup-emoji-${fileKey}" style="font-size: 1.1rem;" title="Meteo medio"></span>` +
+                              `</div>` : '';
+
       let imgHtml = p.image_url ? '<img src="' + p.image_url + '" style="width:100%; max-height:150px; object-fit:cover; border-radius:6px; margin-bottom:12px;">' : '';
 
       const detailsHtml = `
@@ -392,7 +404,7 @@
         </details>
       `;
 
-      const meteoPopupHtml = `<div id="popup-meteo-content-${p.file_location ? p.file_location.replace(/[^a-zA-Z0-9]/g, '_') : Math.random()}" style="margin-top: 10px; font-size: 0.85rem;"></div>`;
+      const meteoPopupHtml = `<div id="popup-meteo-content-${fileKey}" style="margin-top: 10px; font-size: 0.85rem;"></div>`;
 
       const popupContent = 
         '<div style="font-size: 1.05rem; font-weight: bold; margin-bottom: 6px; padding-right: 25px; line-height: 1.3;">' + p.name + '</div>' +
@@ -442,10 +454,13 @@
       const containerRisultato = document.getElementById('risultato-meteo');
       
       let popupMeteoContainer = null;
+      let popupEmojiContainer = null;
       if (selectedLayerForMeteo && selectedLayerForMeteo.isPopupOpen()) {
         const popupEl = selectedLayerForMeteo.getPopup().getElement();
         if (popupEl) {
-          popupMeteoContainer = popupEl.querySelector("[id^='popup-meteo-content-']");
+          const fileKey = selectedLayerForMeteo.feature.properties.file_location ? selectedLayerForMeteo.feature.properties.file_location.replace(/[^a-zA-Z0-9]/g, '_') : '';
+          popupMeteoContainer = popupEl.querySelector(`#popup-meteo-content-${fileKey}`);
+          popupEmojiContainer = popupEl.querySelector(`#popup-emoji-${fileKey}`);
         }
       }
 
@@ -504,6 +519,9 @@
           orarioDettagliHtml += `<strong style="color: #2c3e50; font-size: 0.9rem; display: block; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 3px;">📍 ${nomePercorso}</strong>`;
           orarioDettagliHtml += `<strong>Previsioni ora per ora:</strong><br>`;
 
+          let sommaPioggia = 0;
+          let conteggioSlot = 0;
+
           for (let i = 0; i <= durataOre; i++) {
             const currentIndex = indexInizio + i;
             if (currentIndex < data.hourly.time.length) {
@@ -511,11 +529,21 @@
               const tempSlot = data.hourly.temperature_2m[currentIndex];
               const pioggiaSlot = data.hourly.precipitation_probability[currentIndex];
               
+              sommaPioggia += pioggiaSlot;
+              conteggioSlot++;
+
               let etichettaTempo = (i === 0) ? "Partenza" : (i === durataOre ? "Arrivo" : `+${i}h`);
               orarioDettagliHtml += `• <strong>${oraSlot}</strong> (${etichettaTempo}): ${tempSlot}°C, 💧 ${pioggiaSlot}%<br>`;
             }
           }
           orarioDettagliHtml += `</div>`;
+
+          const mediaPioggia = conteggioSlot > 0 ? (sommaPioggia / conteggioSlot) : 0;
+          const emojiMedio = getMeteoEmoji(mediaPioggia);
+
+          if (popupEmojiContainer) {
+            popupEmojiContainer.textContent = emojiMedio;
+          }
 
           containerRisultato.innerHTML = orarioDettagliHtml;
           if (popupMeteoContainer) {
