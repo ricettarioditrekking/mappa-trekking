@@ -143,22 +143,26 @@ let allData = null;
 let geoJsonLayer = null;
 let selectedLayerForMeteo = null;
 
+// Gestione Caching API e Debouncing per evitare il blocco richieste (Errori 429)
+const trackMeteoCache = new Map();
+let hoverMeteoTimeout = null;
+
 const intervals = [0, 3, 6, 9, 12, 15, 18, 21];
 let currentStepIndex = 4;
 let globalWeatherDataCache = [];
 
-// Configurazione sfumatura continua Heatmap
+// Configurazione Heatmap
 let heatLayer = L.heatLayer([], {
-  radius: 70,        // Raggio ampio per unire i punti vicini
-  blur: 45,          // Sfumatura morbida senza bordi netti
+  radius: 65,
+  blur: 40,
   maxZoom: 12,
   max: 100,
-  minOpacity: 0.2,
+  minOpacity: 0.25,
   gradient: {
-    0.15: '#00bfff', // Azzurro (Precipitazione leggera/bassa probabilità)
-    0.45: '#0000ff', // Blu
-    0.75: '#ffaa00', // Arancione
-    1.00: '#ff0000'  // Rosso (Pioggia forte/Temporali)
+    0.15: '#00bfff',
+    0.45: '#0000ff',
+    0.75: '#ffaa00',
+    1.00: '#ff0000'
   }
 });
 
@@ -172,13 +176,13 @@ const baseMaps = { "OpenTopoMap": topoLayer };
 const overlayMaps = { "Heatmap Precipitazioni": heatLayer };
 
 L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
-heatLayer.addTo(map);
+// HeatLayer DISATTIVATO di default (non aggiunto alla mappa all'avvio)
 
 let moveTimeout;
 map.on('moveend', () => {
   if (map.hasLayer(heatLayer)) {
     clearTimeout(moveTimeout);
-    moveTimeout = setTimeout(() => { updateRegionalWeather(); }, 300);
+    moveTimeout = setTimeout(() => { updateRegionalWeather(); }, 400);
   }
 });
 
@@ -246,7 +250,8 @@ function onEachFeature(feature, layer) {
     selectedLayerForMeteo = layer;
     layer.setStyle({ weight: 8, opacity: 1 });
     if (document.getElementById('chk-autoupdate-meteo').checked) {
-      caricaMeteoTraccia();
+      clearTimeout(hoverMeteoTimeout);
+      hoverMeteoTimeout = setTimeout(() => { caricaMeteoTraccia(); }, 200);
     }
   });
 
@@ -262,17 +267,68 @@ function onEachFeature(feature, layer) {
   });
 }
 
+function renderMeteoResult(data, nomePercorso, dataInput, oraInput, pProps) {
+  const containerRisultato = document.getElementById('risultato-meteo');
+  const oraFormattata = oraInput.split(':')[0].padStart(2, '0');
+  const indexInizio = data.hourly.time.findIndex(t => t.startsWith(`${dataInput}T${oraFormattata}`));
+  
+  const stringaTempoTotale = pProps.tempo_effettivo || pProps.durata || "3h";
+  let durataOre = 3;
+  const matchOre = stringaTempoTotale.match(/(\d+)\s*h/i);
+  if (matchOre) durataOre = parseInt(matchOre[1], 10);
+  durataOre = Math.max(1, Math.min(durataOre, 10));
+
+  if (indexInizio !== -1) {
+    let orarioDettagliHtml = `<div style="background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd; max-height: 180px; overflow-y: auto;"><strong style="color: #2c3e50; font-size: 0.9rem; display: block; margin-bottom: 4px;">📍 ${nomePercorso}</strong>`;
+    let minTemp = Infinity, maxTemp = -Infinity;
+    let peggiorEmoji = '☀️';
+    let maxSeverity = 0;
+
+    for (let i = 0; i <= durataOre; i++) {
+      const currentIndex = indexInizio + i;
+      if (currentIndex < data.hourly.time.length) {
+        const oraSlot = data.hourly.time[currentIndex].split('T')[1];
+        const tempSlot = data.hourly.temperature_2m[currentIndex];
+        const pioggiaSlot = data.hourly.precipitation_probability[currentIndex];
+        const wCode = data.hourly.weathercode[currentIndex];
+        
+        let emojiSlot = getMeteoEmoji(wCode);
+        if (pioggiaSlot >= 50 && (emojiSlot === '☁️' || emojiSlot === '⛅' || emojiSlot === '☀️')) {
+          emojiSlot = '🌧️';
+        }
+
+        if (tempSlot < minTemp) minTemp = tempSlot;
+        if (tempSlot > maxTemp) maxTemp = tempSlot;
+
+        const severityCurrent = getMeteoSeverity(emojiSlot);
+        if (severityCurrent > maxSeverity) {
+          maxSeverity = severityCurrent;
+          peggiorEmoji = emojiSlot;
+        }
+
+        let etichettaTempo = (i === 0) ? "Partenza" : (i === durataOre ? "Arrivo" : `+${i}h`);
+        orarioDettagliHtml += `• <strong>${oraSlot}</strong> (${etichettaTempo}): ${emojiSlot} ${tempSlot}°C, 💧${pioggiaSlot}%<br>`;
+      }
+    }
+    orarioDettagliHtml += `</div>`;
+
+    containerRisultato.innerHTML = `<div style="margin-bottom: 6px; font-weight: bold;">Meteo previsto per la traccia: ${peggiorEmoji} (${minTemp}°C - ${maxTemp}°C)</div>` + orarioDettagliHtml;
+  } else {
+    containerRisultato.innerHTML = "Nessun dato meteo disponibile per la data inserita.";
+  }
+}
+
 async function caricaMeteoTraccia() {
   const containerRisultato = document.getElementById('risultato-meteo');
   if (!selectedLayerForMeteo) return;
   
-  const nomePercorso = selectedLayerForMeteo.feature.properties.name || "Percorso selezionato";
+  const pProps = selectedLayerForMeteo.feature.properties;
+  const nomePercorso = pProps.name || "Percorso selezionato";
   const dataInput = document.getElementById('data-partenza').value;
   const oraInput = document.getElementById('ora-partenza').value;
   
   if (!dataInput) return;
   
-  // Estrazione coordinate infallibile tramite il centro/bounds di Leaflet
   let lat, lon;
   if (selectedLayerForMeteo.getBounds) {
     const center = selectedLayerForMeteo.getBounds().getCenter();
@@ -283,64 +339,24 @@ async function caricaMeteoTraccia() {
     return;
   }
 
-  const pProps = selectedLayerForMeteo.feature.properties;
-  const stringaTempoTotale = pProps.tempo_effettivo || pProps.durata || "3h";
-  let durataOre = 3;
-  const matchOre = stringaTempoTotale.match(/(\d+)\s*h/i);
-  if (matchOre) durataOre = parseInt(matchOre[1], 10);
-  durataOre = Math.max(1, Math.min(durataOre, 10));
+  const cacheKey = `${lat.toFixed(3)}_${lon.toFixed(3)}_${dataInput}`;
+  if (trackMeteoCache.has(cacheKey)) {
+    renderMeteoResult(trackMeteoCache.get(cacheKey), nomePercorso, dataInput, oraInput, pProps);
+    return;
+  }
 
   containerRisultato.innerHTML = "Caricamento meteo...";
 
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&hourly=temperature_2m,precipitation_probability,weathercode&timezone=auto`;
     const response = await fetch(url);
-    if (!response.ok) throw new Error("Errore API");
+    if (!response.ok) throw new Error("API Limit");
     const data = await response.json();
     
-    const oraFormattata = oraInput.split(':')[0].padStart(2, '0');
-    const indexInizio = data.hourly.time.findIndex(t => t.startsWith(`${dataInput}T${oraFormattata}`));
-    
-    if (indexInizio !== -1) {
-      let orarioDettagliHtml = `<div style="background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd; max-height: 180px; overflow-y: auto;"><strong style="color: #2c3e50; font-size: 0.9rem; display: block; margin-bottom: 4px;">📍 ${nomePercorso}</strong>`;
-      let minTemp = Infinity, maxTemp = -Infinity;
-      let peggiorEmoji = '☀️';
-      let maxSeverity = 0;
-
-      for (let i = 0; i <= durataOre; i++) {
-        const currentIndex = indexInizio + i;
-        if (currentIndex < data.hourly.time.length) {
-          const oraSlot = data.hourly.time[currentIndex].split('T')[1];
-          const tempSlot = data.hourly.temperature_2m[currentIndex];
-          const pioggiaSlot = data.hourly.precipitation_probability[currentIndex];
-          const wCode = data.hourly.weathercode[currentIndex];
-          
-          let emojiSlot = getMeteoEmoji(wCode);
-          if (pioggiaSlot >= 50 && (emojiSlot === '☁️' || emojiSlot === '⛅' || emojiSlot === '☀️')) {
-            emojiSlot = '🌧️';
-          }
-
-          if (tempSlot < minTemp) minTemp = tempSlot;
-          if (tempSlot > maxTemp) maxTemp = tempSlot;
-
-          const severityCurrent = getMeteoSeverity(emojiSlot);
-          if (severityCurrent > maxSeverity) {
-            maxSeverity = severityCurrent;
-            peggiorEmoji = emojiSlot;
-          }
-
-          let etichettaTempo = (i === 0) ? "Partenza" : (i === durataOre ? "Arrivo" : `+${i}h`);
-          orarioDettagliHtml += `• <strong>${oraSlot}</strong> (${etichettaTempo}): ${emojiSlot} ${tempSlot}°C, 💧${pioggiaSlot}%<br>`;
-        }
-      }
-      orarioDettagliHtml += `</div>`;
-
-      containerRisultato.innerHTML = `<div style="margin-bottom: 6px; font-weight: bold;">Meteo previsto per la traccia: ${peggiorEmoji} (${minTemp}°C - ${maxTemp}°C)</div>` + orarioDettagliHtml;
-    } else {
-      containerRisultato.innerHTML = "Nessun dato per l'orario selezionato.";
-    }
+    trackMeteoCache.set(cacheKey, data);
+    renderMeteoResult(data, nomePercorso, dataInput, oraInput, pProps);
   } catch (error) {
-    containerRisultato.innerHTML = "Errore durante il recupero dei dati meteo.";
+    containerRisultato.innerHTML = "⚠️ Troppe richieste meteo ravvicinate. Riprova tra poco.";
   }
 }
 
@@ -353,19 +369,26 @@ function updateRegionalWeather() {
   const southWest = bounds.getSouthWest();
   const northEast = bounds.getNorthEast();
 
-  // Griglia 7x7 bilanciata per fondere i punti senza bloccare l'API
-  const latPoints = 7;
-  const lonPoints = 7;
-  const latStep = (northEast.lat - southWest.lat) / latPoints;
-  const lonStep = (northEast.lng - southWest.lng) / lonPoints;
+  // Grid Snapping: aggancia i punti di controllo a coordinate geografiche fisse (~6km)
+  const step = 0.06;
+  const minLat = Math.floor(southWest.lat / step) * step;
+  const maxLat = Math.ceil(northEast.lat / step) * step;
+  const minLng = Math.floor(southWest.lng / step) * step;
+  const maxLng = Math.ceil(northEast.lng / step) * step;
 
   let latitudeQueries = [], longitudeQueries = [];
 
-  for (let i = 0; i <= latPoints; i++) {
-    for (let j = 0; j <= lonPoints; j++) {
-      latitudeQueries.push((southWest.lat + (i * latStep)).toFixed(4));
-      longitudeQueries.push((southWest.lng + (j * lonStep)).toFixed(4));
+  for (let lat = minLat; lat <= maxLat + 0.001; lat += step) {
+    for (let lng = minLng; lng <= maxLng + 0.001; lng += step) {
+      latitudeQueries.push(lat.toFixed(4));
+      longitudeQueries.push(lng.toFixed(4));
     }
+  }
+
+  // Limite sicurezza punti per prevenire query URLs troppo lunghe
+  if (latitudeQueries.length > 81) {
+    latitudeQueries = latitudeQueries.slice(0, 81);
+    longitudeQueries = longitudeQueries.slice(0, 81);
   }
 
   const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitudeQueries.join(',')}&longitude=${longitudeQueries.join(',')}&start_date=${selectedDate}&end_date=${selectedDate}&hourly=precipitation_probability&timezone=auto`;
@@ -390,7 +413,7 @@ function renderWeatherGrid() {
     const lon = location.longitude;
     const rainProb = location.hourly.precipitation_probability[targetHour] || 0;
     
-    if (rainProb > 10) {
+    if (rainProb > 5) {
       heatPoints.push([lat, lon, rainProb]);
     }
   });
@@ -465,6 +488,7 @@ document.querySelectorAll('.filter-group input[type="range"]').forEach(el => {
 document.getElementById('btn-meteo').addEventListener('click', caricaMeteoTraccia);
 
 document.getElementById('data-partenza').addEventListener('change', () => {
+  trackMeteoCache.clear();
   updateRegionalWeather();
   if (document.getElementById('chk-autoupdate-meteo').checked && selectedLayerForMeteo) {
     caricaMeteoTraccia();
@@ -485,7 +509,6 @@ fetch('percorsi.geojson?v=' + new Date().getTime())
     if (geoJsonLayer && geoJsonLayer.getBounds().isValid()) {
       map.fitBounds(geoJsonLayer.getBounds(), { padding: [30, 30] });
     }
-    updateRegionalWeather();
   })
   .catch(error => console.error('Errore GeoJSON:', error));
 </script>
