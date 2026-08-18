@@ -143,21 +143,22 @@ let allData = null;
 let geoJsonLayer = null;
 let selectedLayerForMeteo = null;
 
-// Gestione Caching API e Debouncing per evitare il blocco richieste (Errori 429)
+// Gestione Caching Avanzato
 const trackMeteoCache = new Map();
+const regionalMeteoCache = new Map();
 let hoverMeteoTimeout = null;
 
 const intervals = [0, 3, 6, 9, 12, 15, 18, 21];
 let currentStepIndex = 4;
 let globalWeatherDataCache = [];
 
-// Configurazione Heatmap
+// Heatmap con bilanciamento visivo ottimizzato
 let heatLayer = L.heatLayer([], {
-  radius: 65,
-  blur: 40,
+  radius: 50,
+  blur: 35,
   maxZoom: 12,
   max: 100,
-  minOpacity: 0.25,
+  minOpacity: 0.2,
   gradient: {
     0.15: '#00bfff',
     0.45: '#0000ff',
@@ -176,13 +177,12 @@ const baseMaps = { "OpenTopoMap": topoLayer };
 const overlayMaps = { "Heatmap Precipitazioni": heatLayer };
 
 L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
-// HeatLayer DISATTIVATO di default (non aggiunto alla mappa all'avvio)
 
 let moveTimeout;
 map.on('moveend', () => {
   if (map.hasLayer(heatLayer)) {
     clearTimeout(moveTimeout);
-    moveTimeout = setTimeout(() => { updateRegionalWeather(); }, 400);
+    moveTimeout = setTimeout(() => { updateRegionalWeather(); }, 800);
   }
 });
 
@@ -251,7 +251,7 @@ function onEachFeature(feature, layer) {
     layer.setStyle({ weight: 8, opacity: 1 });
     if (document.getElementById('chk-autoupdate-meteo').checked) {
       clearTimeout(hoverMeteoTimeout);
-      hoverMeteoTimeout = setTimeout(() => { caricaMeteoTraccia(); }, 200);
+      hoverMeteoTimeout = setTimeout(() => { caricaMeteoTraccia(); }, 450);
     }
   });
 
@@ -350,13 +350,13 @@ async function caricaMeteoTraccia() {
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&hourly=temperature_2m,precipitation_probability,weathercode&timezone=auto`;
     const response = await fetch(url);
-    if (!response.ok) throw new Error("API Limit");
+    if (!response.ok) throw new Error("RateLimit");
     const data = await response.json();
     
     trackMeteoCache.set(cacheKey, data);
     renderMeteoResult(data, nomePercorso, dataInput, oraInput, pProps);
   } catch (error) {
-    containerRisultato.innerHTML = "⚠️ Troppe richieste meteo ravvicinate. Riprova tra poco.";
+    containerRisultato.innerHTML = "⚠️ Attendi un istante per nuove richieste meteo.";
   }
 }
 
@@ -369,37 +369,43 @@ function updateRegionalWeather() {
   const southWest = bounds.getSouthWest();
   const northEast = bounds.getNorthEast();
 
-  // Grid Snapping: aggancia i punti di controllo a coordinate geografiche fisse (~6km)
-  const step = 0.06;
-  const minLat = Math.floor(southWest.lat / step) * step;
-  const maxLat = Math.ceil(northEast.lat / step) * step;
-  const minLng = Math.floor(southWest.lng / step) * step;
-  const maxLng = Math.ceil(northEast.lng / step) * step;
+  // Griglia uniforme 7x7 (49 punti in totale distribuita perfettamente su tutta l'area visibile)
+  const gridRows = 7;
+  const gridCols = 7;
+  const latStep = (northEast.lat - southWest.lat) / (gridRows - 1);
+  const lonStep = (northEast.lng - southWest.lng) / (gridCols - 1);
 
   let latitudeQueries = [], longitudeQueries = [];
 
-  for (let lat = minLat; lat <= maxLat + 0.001; lat += step) {
-    for (let lng = minLng; lng <= maxLng + 0.001; lng += step) {
-      latitudeQueries.push(lat.toFixed(4));
-      longitudeQueries.push(lng.toFixed(4));
+  for (let i = 0; i < gridRows; i++) {
+    for (let j = 0; j < gridCols; j++) {
+      let lat = southWest.lat + (i * latStep);
+      let lon = southWest.lng + (j * lonStep);
+      latitudeQueries.push(lat.toFixed(3));
+      longitudeQueries.push(lon.toFixed(3));
     }
   }
 
-  // Limite sicurezza punti per prevenire query URLs troppo lunghe
-  if (latitudeQueries.length > 81) {
-    latitudeQueries = latitudeQueries.slice(0, 81);
-    longitudeQueries = longitudeQueries.slice(0, 81);
+  const cacheRegionKey = `${selectedDate}_${southWest.lat.toFixed(1)}_${northEast.lat.toFixed(1)}_${southWest.lng.toFixed(1)}_${northEast.lng.toFixed(1)}`;
+  if (regionalMeteoCache.has(cacheRegionKey)) {
+    globalWeatherDataCache = regionalMeteoCache.get(cacheRegionKey);
+    renderWeatherGrid();
+    return;
   }
 
   const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitudeQueries.join(',')}&longitude=${longitudeQueries.join(',')}&start_date=${selectedDate}&end_date=${selectedDate}&hourly=precipitation_probability&timezone=auto`;
 
   fetch(apiUrl)
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error("Rate limit");
+      return res.json();
+    })
     .then(data => {
       globalWeatherDataCache = Array.isArray(data) ? data : [data];
+      regionalMeteoCache.set(cacheRegionKey, globalWeatherDataCache);
       renderWeatherGrid();
     })
-    .catch(err => console.error("Errore download heatmap:", err));
+    .catch(err => console.error("Limite richieste heatmap raggiunto o errore di connessione"));
 }
 
 function renderWeatherGrid() {
@@ -489,6 +495,7 @@ document.getElementById('btn-meteo').addEventListener('click', caricaMeteoTracci
 
 document.getElementById('data-partenza').addEventListener('change', () => {
   trackMeteoCache.clear();
+  regionalMeteoCache.clear();
   updateRegionalWeather();
   if (document.getElementById('chk-autoupdate-meteo').checked && selectedLayerForMeteo) {
     caricaMeteoTraccia();
