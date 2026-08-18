@@ -321,7 +321,7 @@
       <input type="date" id="data-partenza" style="width: 100%; margin-bottom: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
       
       <label for="ora-partenza" style="font-size: 0.85rem; font-weight: normal; margin-bottom: 2px;">Ora di partenza:</label>
-      <input type="time" id="ora-partenza" value="08:00" style="width: 100%; margin-bottom: 10px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+      <input type="time" id="ora-partenza" value="10:00" style="width: 100%; margin-bottom: 10px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
       
       <button id="btn-meteo" style="width: 100%; padding: 8px; background-color: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">
         Controlla Meteo Percorso
@@ -339,6 +339,14 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
+    // Imposta automaticamente la data di domani all'avvio
+    const domani = new Date();
+    domani.setDate(domani.getDate() + 1);
+    const anno = domani.getFullYear();
+    const mese = String(domani.getMonth() + 1).padStart(2, '0');
+    const giorno = String(domani.getDate()).padStart(2, '0');
+    document.getElementById('data-partenza').value = `${anno}-${mese}-${giorno}`;
+
     let allData = null;
     let geoJsonLayer = null;
     let selectedLayerForMeteo = null;
@@ -384,7 +392,6 @@
         </details>
       `;
 
-      // Contenitore vuoto dedicato al meteo all'interno del popup
       const meteoPopupHtml = `<div id="popup-meteo-content-${p.file_location ? p.file_location.replace(/[^a-zA-Z0-9]/g, '_') : Math.random()}" style="margin-top: 10px; font-size: 0.85rem;"></div>`;
 
       const popupContent = 
@@ -408,7 +415,6 @@
       layer.on('popupopen', function(e) {
         selectedLayerForMeteo = layer;
         
-        // Se l'autoupdate è attivo, calcola il meteo automaticamente all'apertura del popup
         const autoUpdateEnabled = document.getElementById('chk-autoupdate-meteo').checked;
         if (autoUpdateEnabled) {
           caricaMeteoTraccia();
@@ -432,16 +438,13 @@
       });
     }
 
-    // Funzione unificata per il recupero del meteo (aggiorna sia sidebar che eventuale popup attivo)
     async function caricaMeteoTraccia() {
       const containerRisultato = document.getElementById('risultato-meteo');
       
-      // Trova anche il contenitore del meteo all'interno del popup aperto (se presente)
       let popupMeteoContainer = null;
       if (selectedLayerForMeteo && selectedLayerForMeteo.isPopupOpen()) {
         const popupEl = selectedLayerForMeteo.getPopup().getElement();
         if (popupEl) {
-          // Trova il div dinamico del meteo nel popup
           popupMeteoContainer = popupEl.querySelector("[id^='popup-meteo-content-']");
         }
       }
@@ -467,8 +470,22 @@
       const lon = coords[0][0];
       const lat = coords[0][1];
 
-      const kmPercorso = selectedLayerForMeteo.feature.properties.km || 10;
-      const durataOre = Math.max(2, Math.round(kmPercorso / 3.0));
+      // Calcola la durata totale leggendo direttamente il tempo totale del percorso (es. "tempo_effettivo" o "durata")
+      const pProps = selectedLayerForMeteo.feature.properties;
+      const stringaTempoTotale = pProps.tempo_effettivo || pProps.durata || "2h";
+      
+      let durataOre = 2; // Default di sicurezza
+      const matchOre = stringaTempoTotale.match(/(\d+)\s*h/i);
+      if (matchOre) {
+        durataOre = parseInt(matchOre[1], 10);
+      } else {
+        // Fallback numerico generico o conversione minuti se presenti
+        const oreNum = parseFloat(stringaTempoTotale);
+        if (!isNaN(oreNum) && oreNum > 0) {
+          durataOre = Math.round(oreNum);
+        }
+      }
+      durataOre = Math.max(1, durataOre);
 
       const loadingMsg = "Caricamento meteo in corso...";
       containerRisultato.innerHTML = loadingMsg;
@@ -502,7 +519,6 @@
           containerRisultato.innerHTML = htmlRisultato;
           if (popupMeteoContainer) {
             popupMeteoContainer.innerHTML = htmlRisultato;
-            // Aggiorna le dimensioni del popup leaflet in caso di cambio contenuto
             selectedLayerForMeteo.getPopup().update();
           }
         } else {
@@ -519,10 +535,8 @@
       }
     }
 
-    // Listener sul pulsante manuale
     document.getElementById('btn-meteo').addEventListener('click', caricaMeteoTraccia);
 
-    // Se l'utente cambia data o ora e c'è un percorso selezionato con autoupdate attivo
     document.getElementById('data-partenza').addEventListener('change', () => {
       if (document.getElementById('chk-autoupdate-meteo').checked && selectedLayerForMeteo) {
         caricaMeteoTraccia();
