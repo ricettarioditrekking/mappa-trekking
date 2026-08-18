@@ -18,7 +18,6 @@ html, body {
   font-family: Arial, sans-serif;
   display: flex;
 }
-/* Left Sidebar Styling */
 #sidebar {
   width: 320px;
   height: 100%;
@@ -97,7 +96,6 @@ html, body {
 .leaflet-interactive {
   filter: drop-shadow(0px 0px 3px currentColor);
 }
-/* POPUP DESIGN */
 .popup-right {
   margin-bottom: 0 !important;
 }
@@ -131,42 +129,6 @@ html, body {
   line-height: 1.5;
   color: #333;
 }
-.popup-right .leaflet-popup-content::-webkit-scrollbar {
-  width: 6px;
-}
-.popup-right .leaflet-popup-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-.popup-right .leaflet-popup-content::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 4px;
-}
-.popup-right .leaflet-popup-content::-webkit-scrollbar-thumb:hover {
-  background: #aaa;
-}
-.popup-right .leaflet-popup-close-button {
-  top: 10px !important;
-  right: 10px !important;
-  width: 26px !important;
-  height: 26px !important;
-  line-height: 26px !important;
-  text-align: center !important;
-  font-size: 16px !important;
-  font-weight: bold;
-  color: #555 !important;
-  background: #ffffff !important;
-  border-radius: 50%;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  z-index: 10;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-.popup-right .leaflet-popup-close-button:hover {
-  color: #000 !important;
-  background: #f4f4f4 !important;
-  transform: scale(1.05);
-}
 details {
   margin-top: 12px;
   background: #f7f7f7;
@@ -179,7 +141,6 @@ summary {
   font-weight: bold;
   cursor: pointer;
   color: #222;
-  outline: none;
 }
 .details-content {
   margin-top: 8px;
@@ -203,7 +164,6 @@ summary {
 </head>
 <body>
 
-<!-- Sidebar Filters -->
 <div id="sidebar">
   <h2>Filtri Percorsi</h2>
   
@@ -277,7 +237,6 @@ summary {
     </select>
   </div>
 
-  <!-- Pannello Meteo Planner -->
   <div class="filter-group" style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #ddd;">
     <label style="margin-bottom: 10px; color: #2c3e50;">Pianificatore Meteo:</label>
     <div style="margin-bottom: 8px;">
@@ -294,9 +253,8 @@ summary {
     </button>
     <div id="risultato-meteo" style="margin-top: 8px; margin-bottom: 15px; font-size: 0.85rem;">Seleziona un percorso sulla mappa</div>
 
-    <!-- CONTROLLO SLIDER ORARIO REGIONALE -->
     <div id="regione-meteo-controls" style="background: #edf2f7; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e0;">
-      <label style="color: #2d3748; font-size: 0.85rem; margin-bottom: 4px;"><strong>Meteo Regione (Passi 3h):</strong></label>
+      <label style="color: #2d3748; font-size: 0.85rem; margin-bottom: 4px;"><strong>Heatmap Precipitazioni (Passi 3h):</strong></label>
       <div style="font-size: 0.85rem; color: #4a5568; margin-bottom: 4px;">Ora selezionata: <span id="time-display" style="font-weight: bold;">12:00</span></div>
       <input type="range" id="time-slider" min="0" max="7" value="4" step="1" style="width: 100%; margin: 5px 0;" oninput="changeForecastStep(this.value)">
       <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #718096;">
@@ -310,10 +268,11 @@ summary {
 
 <div id="map"></div>
 
-<!-- Leaflet JS -->
+<!-- Leaflet JS & Plugin Heatmap -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
 <script>
-// Imposta automaticamente la data di domani all'avvio
 const domani = new Date();
 domani.setDate(domani.getDate() + 1);
 const anno = domani.getFullYear();
@@ -325,11 +284,23 @@ let allData = null;
 let geoJsonLayer = null;
 let selectedLayerForMeteo = null;
 
-// Gestione Griglia Meteo Regionale
-const regionalWeatherGroup = L.layerGroup();
 const intervals = [0, 3, 6, 9, 12, 15, 18, 21];
-let currentStepIndex = 4; // default index 4 -> 12:00
+let currentStepIndex = 4;
 let globalWeatherDataCache = [];
+
+// Inizializzazione Heatmap
+let heatLayer = L.heatLayer([], {
+  radius: 45,
+  blur: 30,
+  maxZoom: 13,
+  max: 100, // 100% probabilità di pioggia o mm elevati
+  gradient: {
+    0.2: '#00bfff', // Azzurro (Pioggia leggera / Bassa probabilità)
+    0.5: '#0000ff', // Blu (Pioggia moderata)
+    0.8: '#ffaa00', // Arancione (Pioggia forte)
+    1.0: '#ff0000'  // Rosso (Temporale / Pioggia torrenziale)
+  }
+});
 
 const map = L.map('map').setView([46.4983, 11.3548], 10);
 const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
@@ -337,25 +308,19 @@ const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
   attribution: 'Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)'
 }).addTo(map);
 
-const baseMaps = {
-  "OpenTopoMap": topoLayer
-};
-const overlayMaps = {
-  "Meteo Previsionale Regione": regionalWeatherGroup
-};
+const baseMaps = { "OpenTopoMap": topoLayer };
+const overlayMaps = { "Heatmap Precipitazioni": heatLayer };
+
 L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
-regionalWeatherGroup.addTo(map);
+heatLayer.addTo(map);
 
-// Ricalcola la griglia quando la mappa viene spostata o zoomata
+let moveTimeout;
 map.on('moveend', () => {
-  if (map.hasLayer(regionalWeatherGroup)) {
-    updateRegionalWeather();
-  }
-});
-
-map.on('overlayadd', (e) => {
-  if (e.name === "Meteo Previsionale Regione") {
-    updateRegionalWeather();
+  if (map.hasLayer(heatLayer)) {
+    clearTimeout(moveTimeout);
+    moveTimeout = setTimeout(() => {
+      updateRegionalWeather();
+    }, 250);
   }
 });
 
@@ -369,48 +334,20 @@ function getNeonColor(difficolta) {
   }
 }
 
-// MAPPATURA UFFICIALE CODICI METEO WMO DI OPEN-METEO
 function getMeteoEmoji(weatherCode) {
   switch (weatherCode) {
-    case 0: 
-      return '☀️'; // Soleggiato / Sereno
+    case 0: return '☀️';
     case 1: 
-    case 2: 
-      return '⛅'; // Poco o parzialmente nuvoloso
-    case 3: 
-      return '☁️'; // Nuvoloso / Coperto (senza pioggia)
+    case 2: return '⛅';
+    case 3: return '☁️';
     case 45:
-    case 48: 
-      return '🌫️'; // Nebbia
-    case 51:
-    case 53:
-    case 55:
-    case 56:
-    case 57: 
-      return '🌧️'; // Pioggerella / Pioggia leggera
-    case 61:
-    case 63:
-    case 65:
-    case 66:
-    case 67: 
-      return '🌧️'; // Pioggia
-    case 71:
-    case 73:
-    case 75:
-    case 77:
-    case 85:
-    case 86: 
-      return '❄️'; // Neve
-    case 80:
-    case 81:
-    case 82: 
-      return '🌦️'; // Rovesci di pioggia
-    case 95:
-    case 96:
-    case 99: 
-      return '⚡'; // Temporale
-    default: 
-      return '❓';
+    case 48: return '🌫️';
+    case 51: case 53: case 55: case 56: case 57: 
+    case 61: case 63: case 65: case 66: case 67: return '🌧️';
+    case 71: case 73: case 75: case 77: case 85: case 86: return '❄️';
+    case 80: case 81: case 82: return '🌦️';
+    case 95: case 96: case 99: return '⚡';
+    default: return '❓';
   }
 }
 
@@ -429,72 +366,31 @@ function onEachFeature(feature, layer) {
   
   const popupContent = `<strong>${p.name}</strong><br>${linkHtml}${imgHtml}Distanza: ${p.km} km<br>Dislivello: +${p.dislivello}m / -${dislivelloNeg}m<br>Tempo totale: ${tempoStr}<br>Difficoltà: ${p.difficolta}${sforzoStr}<br>${detailsHtml}`;
   
-  layer.bindPopup(popupContent, {
-    className: 'popup-right',
-    minWidth: 285,
-    maxWidth: 285,
-    offset: [0, 0],
-    autoPanPadding: [50, 50]
-  });
+  layer.bindPopup(popupContent, { className: 'popup-right', minWidth: 285, maxWidth: 285 });
 
   layer.on('popupopen', function(e) {
     selectedLayerForMeteo = layer;
-    const autoUpdateEnabled = document.getElementById('chk-autoupdate-meteo').checked;
-    if (autoUpdateEnabled) {
+    if (document.getElementById('chk-autoupdate-meteo').checked) {
       caricaMeteoTraccia();
-    }
-    const popup = e.popup;
-    const detailsElem = popup.getElement().querySelector('details');
-    if (detailsElem) {
-      detailsElem.addEventListener('toggle', function() {
-        popup.update();
-      });
-    }
-  });
-
-  layer.on({
-    mouseover: function(e) {
-      if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
-        this.openPopup();
-      }
     }
   });
 }
 
 async function caricaMeteoTraccia() {
   const containerRisultato = document.getElementById('risultato-meteo');
-  if (!selectedLayerForMeteo) {
-    containerRisultato.innerHTML = "Seleziona prima un percorso sulla mappa!";
-    return;
-  }
+  if (!selectedLayerForMeteo) return;
+  
   const nomePercorso = selectedLayerForMeteo.feature.properties.name || "Percorso selezionato";
   const dataInput = document.getElementById('data-partenza').value;
   const oraInput = document.getElementById('ora-partenza').value;
   
-  if (!dataInput) {
-    containerRisultato.innerHTML = "Seleziona una data per l'escursione.";
-    return;
-  }
+  if (!dataInput) return;
   
   const coords = selectedLayerForMeteo.feature.geometry.coordinates;
   const lon = coords[0][0];
   const lat = coords[0][1];
-  const pProps = selectedLayerForMeteo.feature.properties;
   
-  const stringaTempoTotale = pProps.tempo_effettivo || pProps.durata || "2h";
-  let durataOre = 2;
-  const matchOre = stringaTempoTotale.match(/(\d+)\s*h/i);
-  if (matchOre) {
-    durataOre = parseInt(matchOre[1], 10);
-  } else {
-    const oreNum = parseFloat(stringaTempoTotale);
-    if (!isNaN(oreNum) && oreNum > 0) {
-      durataOre = Math.round(oreNum);
-    }
-  }
-  durataOre = Math.max(1, durataOre);
-
-  containerRisultato.innerHTML = "Caricamento meteo in corso...";
+  containerRisultato.innerHTML = "Caricamento meteo...";
 
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability,weathercode&timezone=auto`;
@@ -505,46 +401,36 @@ async function caricaMeteoTraccia() {
     const indexInizio = data.hourly.time.findIndex(t => t.startsWith(`${dataInput}T${oraFormattata}`));
     
     if (indexInizio !== -1) {
-      let orarioDettagliHtml = `<div style="background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd; max-height: 180px; overflow-y: auto;"><strong style="color: #2c3e50; font-size: 0.9rem; display: block; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 3px;">📍 ${nomePercorso}</strong><strong>Previsioni ora per ora:</strong><br>`;
-      let minTemp = Infinity;
-      let maxTemp = -Infinity;
-      let conteggioSlot = 0;
+      let orarioDettagliHtml = `<div style="background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd; max-height: 180px; overflow-y: auto;"><strong style="color: #2c3e50; font-size: 0.9rem; display: block; margin-bottom: 4px;">📍 ${nomePercorso}</strong>`;
+      let minTemp = Infinity, maxTemp = -Infinity, conteggioSlot = 0;
       let primoWeatherCode = data.hourly.weathercode[indexInizio];
 
-      for (let i = 0; i <= durataOre; i++) {
+      for (let i = 0; i <= 3; i++) {
         const currentIndex = indexInizio + i;
         if (currentIndex < data.hourly.time.length) {
           const oraSlot = data.hourly.time[currentIndex].split('T')[1];
           const tempSlot = data.hourly.temperature_2m[currentIndex];
           const pioggiaSlot = data.hourly.precipitation_probability[currentIndex];
-          const wCode = data.hourly.weathercode[currentIndex];
-          const emojiSlot = getMeteoEmoji(wCode);
+          const emojiSlot = getMeteoEmoji(data.hourly.weathercode[currentIndex]);
           
           if (tempSlot < minTemp) minTemp = tempSlot;
           if (tempSlot > maxTemp) maxTemp = tempSlot;
           conteggioSlot++;
 
-          let etichettaTempo = (i === 0) ? "Partenza" : (i === durataOre ? "Arrivo" : `+${i}h`);
-          orarioDettagliHtml += `• <strong>${oraSlot}</strong> (${etichettaTempo}): ${emojiSlot} ${tempSlot}°C, 💧${pioggiaSlot}%<br>`;
+          orarioDettagliHtml += `• <strong>${oraSlot}</strong>: ${emojiSlot} ${tempSlot}°C, 💧${pioggiaSlot}%<br>`;
         }
       }
       orarioDettagliHtml += `</div>`;
 
-      const emojiPartenza = getMeteoEmoji(primoWeatherCode);
-      const summaryText = conteggioSlot > 0 ? `${emojiPartenza} (${minTemp}°C - ${maxTemp}°C)` : `${emojiPartenza} (N/D)`;
-
-      containerRisultato.innerHTML = `<div style="margin-bottom: 6px; font-weight: bold;">Meteo previsto per la traccia: ${summaryText}</div>` + orarioDettagliHtml;
-    } else {
-      containerRisultato.innerHTML = "Orario non disponibile nelle previsioni della traccia.";
+      const summaryText = conteggioSlot > 0 ? `${getMeteoEmoji(primoWeatherCode)} (${minTemp}°C - ${maxTemp}°C)` : 'N/D';
+      containerRisultato.innerHTML = `<div style="margin-bottom: 6px; font-weight: bold;">Meteo traccia: ${summaryText}</div>` + orarioDettagliHtml;
     }
   } catch (error) {
-    console.error("Errore nel recupero meteo:", error);
-    containerRisultato.innerHTML = "Errore di connessione al servizio meteo della traccia.";
+    containerRisultato.innerHTML = "Errore dati meteo.";
   }
 }
 
 function updateRegionalWeather() {
-  regionalWeatherGroup.clearLayers();
   const selectedDate = document.getElementById('data-partenza').value;
   if (!selectedDate) return;
 
@@ -552,25 +438,22 @@ function updateRegionalWeather() {
   const southWest = bounds.getSouthWest();
   const northEast = bounds.getNorthEast();
 
-  const latPoints = 4;
-  const lonPoints = 4;
+  // Griglia densa per una heatmap fluida
+  const latPoints = 8;
+  const lonPoints = 8;
   const latStep = (northEast.lat - southWest.lat) / latPoints;
   const lonStep = (northEast.lng - southWest.lng) / lonPoints;
 
-  let latitudeQueries = [];
-  let longitudeQueries = [];
+  let latitudeQueries = [], longitudeQueries = [];
 
-  for (let i = 0.5; i < latPoints; i++) {
-    for (let j = 0.5; j < lonPoints; j++) {
+  for (let i = 0; i <= latPoints; i++) {
+    for (let j = 0; j <= lonPoints; j++) {
       latitudeQueries.push(southWest.lat + (i * latStep));
       longitudeQueries.push(southWest.lng + (j * lonStep));
     }
   }
 
-  const latString = latitudeQueries.join(',');
-  const lonString = longitudeQueries.join(',');
-
-  const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latString}&longitude=${lonString}&start_date=${selectedDate}&end_date=${selectedDate}&hourly=temperature_2m,precipitation,precipitation_probability,weathercode&timezone=auto`;
+  const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitudeQueries.join(',')}&longitude=${longitudeQueries.join(',')}&start_date=${selectedDate}&end_date=${selectedDate}&hourly=precipitation_probability,precipitation&timezone=auto`;
 
   fetch(apiUrl)
     .then(res => res.json())
@@ -578,44 +461,27 @@ function updateRegionalWeather() {
       globalWeatherDataCache = Array.isArray(data) ? data : [data];
       renderWeatherGrid();
     })
-    .catch(err => console.error("Download griglia meteo fallito:", err));
+    .catch(err => console.error("Errore download heatmap:", err));
 }
 
 function renderWeatherGrid() {
-  regionalWeatherGroup.clearLayers();
   if (!globalWeatherDataCache.length) return;
 
   const targetHour = intervals[currentStepIndex];
+  let heatPoints = [];
 
   globalWeatherDataCache.forEach(location => {
     const lat = location.latitude;
     const lon = location.longitude;
-    const temperature = location.hourly.temperature_2m[targetHour];
-    const rain = location.hourly.precipitation[targetHour];
-    const rainProb = location.hourly.precipitation_probability[targetHour];
-    const wCode = location.hourly.weathercode[targetHour];
-    const statusSymbol = getMeteoEmoji(wCode);
-
-    let areaColor = '#33cc33'; // Verde per bel tempo / asciutto
-    if (rain > 0 || rainProb > 40) {
-      areaColor = rain > 1 ? '#ff3333' : '#ff9900'; // Rosso per pioggia, Arancione per probabile
+    const rainProb = location.hourly.precipitation_probability[targetHour] || 0;
+    
+    // Mostra la sfumatura solo dove la probabilità di pioggia supera il 15%
+    if (rainProb > 15) {
+      heatPoints.push([lat, lon, rainProb]);
     }
-
-    const currentZoom = map.getZoom();
-    const circleRadius = currentZoom > 11 ? 2000 : (currentZoom > 9 ? 6000 : 15000);
-
-    const gridCircle = L.circle([lat, lon], {
-      radius: circleRadius,
-      color: areaColor,
-      fillColor: areaColor,
-      fillOpacity: 0.25,
-      weight: 1
-    });
-
-    gridCircle.bindPopup(`<strong>Meteo Area di Regione</strong><br/><strong>Orario:</strong> ${targetHour}:00<br/><strong>Condizione:</strong> ${statusSymbol} ${rain > 0 ? `Pioggia (${rain}mm)` : 'Asciutto'}<br/><strong>Probabilità Pioggia:</strong> ${rainProb}%<br/><strong>Temperatura Stg:</strong> ${temperature}°C`);
-
-    regionalWeatherGroup.addLayer(gridCircle);
   });
+
+  heatLayer.setLatLngs(heatPoints);
 }
 
 function changeForecastStep(value) {
@@ -667,9 +533,7 @@ function applyFilters() {
       return {
         color: getNeonColor(feature.properties.difficolta),
         weight: 5,
-        opacity: 0.95,
-        lineCap: 'round',
-        lineJoin: 'round'
+        opacity: 0.95
       };
     },
     onEachFeature: onEachFeature
@@ -678,14 +542,13 @@ function applyFilters() {
   document.getElementById('stats').textContent = `Mostrati: ${filteredFeatures.length} di ${allData.features.length} percorsi`;
 }
 
-// Listeners dei filtri
 document.getElementById('filter-difficolta').addEventListener('change', applyFilters);
 document.getElementById('filter-durata').addEventListener('change', applyFilters);
 document.getElementById('chk-fatte').addEventListener('change', applyFilters);
 document.getElementById('chk-non-fatte').addEventListener('change', applyFilters);
 
-['filter-dist-min', 'filter-dist-max', 'filter-dis-pos-min', 'filter-dis-pos-max', 'filter-dis-neg-min', 'filter-dis-neg-max'].forEach(id => {
-  document.getElementById(id).addEventListener('input', applyFilters);
+document.querySelectorAll('.filter-group input[type="range"]').forEach(el => {
+  el.addEventListener('input', applyFilters);
 });
 
 document.getElementById('btn-meteo').addEventListener('click', caricaMeteoTraccia);
@@ -703,7 +566,6 @@ document.getElementById('ora-partenza').addEventListener('change', () => {
   }
 });
 
-// Caricamento del GeoJSON dei percorsi
 fetch('percorsi.geojson?v=' + new Date().getTime())
   .then(response => response.json())
   .then(data => {
@@ -714,7 +576,7 @@ fetch('percorsi.geojson?v=' + new Date().getTime())
     }
     updateRegionalWeather();
   })
-  .catch(error => console.error('Error loading GeoJSON:', error));
+  .catch(error => console.error('Errore GeoJSON:', error));
 </script>
 </body>
 </html>
