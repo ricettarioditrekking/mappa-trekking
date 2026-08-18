@@ -401,9 +401,7 @@
         </details>
       `;
 
-      // Contenitore dinamico per il meteo nel popup
-      const meteoPopupHtml = `<div class="popup-meteo-dynamic-container" style="margin-top: 10px; font-size: 0.85rem;"><em>Seleziona o ricarica il meteo...</em></div>`;
-
+      // Popup pulito senza alcuna riga o accenno al meteo
       const popupContent = 
         '<div style="font-size: 1.05rem; font-weight: bold; margin-bottom: 6px; padding-right: 25px; line-height: 1.3;">' + p.name + '</div>' +
         linkHtml + imgHtml +
@@ -411,7 +409,6 @@
         'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
         'Tempo totale: ' + tempoStr + '<br>' +
         'Difficoltà: ' + p.difficolta + sforzoStr + '<br>' +
-        meteoPopupHtml +
         detailsHtml;
 
       layer.bindPopup(popupContent, {
@@ -428,14 +425,6 @@
         const autoUpdateEnabled = document.getElementById('chk-autoupdate-meteo').checked;
         if (autoUpdateEnabled) {
           caricaMeteoTraccia();
-        } else {
-          // Se l'autoupdate è spento, mostra nel popup quello che c'è attualmente nel pannello laterale
-          const sidebarContent = document.getElementById('risultato-meteo').innerHTML;
-          const popupEl = e.popup.getElement();
-          if (popupEl) {
-            const popupDynamic = popupEl.querySelector('.popup-meteo-dynamic-container');
-            if (popupDynamic) popupDynamic.innerHTML = sidebarContent;
-          }
         }
 
         const popup = e.popup;
@@ -460,8 +449,7 @@
       const containerRisultato = document.getElementById('risultato-meteo');
 
       if (!selectedLayerForMeteo) {
-        const msg = "<span style='color: #c0392b;'>Seleziona prima un percorso sulla mappa!</span>";
-        containerRisultato.innerHTML = msg;
+        containerRisultato.innerHTML = "<span style='color: #c0392b;'>Seleziona prima un percorso sulla mappa!</span>";
         return;
       }
 
@@ -470,8 +458,7 @@
       const oraInput = document.getElementById('ora-partenza').value;
 
       if (!dataInput) {
-        const msg = "<span style='color: #c0392b;'>Seleziona una data per l'escursione.</span>";
-        containerRisultato.innerHTML = msg;
+        containerRisultato.innerHTML = "<span style='color: #c0392b;'>Seleziona una data per l'escursione.</span>";
         return;
       }
 
@@ -494,16 +481,7 @@
       }
       durataOre = Math.max(1, durataOre);
 
-      const loadingMsg = "Caricamento meteo in corso...";
-      containerRisultato.innerHTML = loadingMsg;
-      
-      if (selectedLayerForMeteo.isPopupOpen()) {
-        const popupEl = selectedLayerForMeteo.getPopup().getElement();
-        if (popupEl) {
-          const popupDynamic = popupEl.querySelector('.popup-meteo-dynamic-container');
-          if (popupDynamic) popupDynamic.innerHTML = `<div style="font-weight: bold; color: #555;">Caricamento meteo...</div>`;
-        }
-      }
+      containerRisultato.innerHTML = "Caricamento meteo in corso...";
 
       try {
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability&timezone=auto`;
@@ -546,46 +524,16 @@
           const emojiMedio = getMeteoEmoji(mediaPioggia);
           const summaryText = conteggioSlot > 0 ? `${emojiMedio} (${minTemp}°C - ${maxTemp}°C)` : `${emojiMedio} (N/D)`;
 
-          const htmlFinale = `<div style="margin-bottom: 6px; font-weight: bold;">Meteo previsto: ${summaryText}</div>` + orarioDettagliHtml;
-
-          // Aggiorna pannello laterale
-          containerRisultato.innerHTML = htmlFinale;
-
-          // Aggiorna popup se aperto
-          if (selectedLayerForMeteo && selectedLayerForMeteo.isPopupOpen()) {
-            const currentPopupEl = selectedLayerForMeteo.getPopup().getElement();
-            if (currentPopupEl) {
-              const popupDynamic = currentPopupEl.querySelector('.popup-meteo-dynamic-container');
-              if (popupDynamic) {
-                popupDynamic.innerHTML = htmlFinale;
-                selectedLayerForMeteo.getPopup().update();
-              }
-            }
-          }
+          // Aggiorna solo il pannello laterale
+          containerRisultato.innerHTML = `<div style="margin-bottom: 6px; font-weight: bold;">Meteo previsto: ${summaryText}</div>` + orarioDettagliHtml;
 
         } else {
-          const errorMsg = "<span style='color: #d35400;'>Orario non disponibile nelle previsioni.</span>";
-          containerRisultato.innerHTML = errorMsg;
-          if (selectedLayerForMeteo && selectedLayerForMeteo.isPopupOpen()) {
-            const popupEl = selectedLayerForMeteo.getPopup().getElement();
-            if (popupEl) {
-              const popupDynamic = popupEl.querySelector('.popup-meteo-dynamic-container');
-              if (popupDynamic) popupDynamic.innerHTML = errorMsg;
-            }
-          }
+          containerRisultato.innerHTML = "<span style='color: #d35400;'>Orario non disponibile nelle previsioni.</span>";
         }
 
       } catch (error) {
         console.error("Errore nel recupero meteo:", error);
-        const errorMsg = "<span style='color: #c0392b;'>Errore di connessione al servizio meteo.</span>";
-        containerRisultato.innerHTML = errorMsg;
-        if (selectedLayerForMeteo && selectedLayerForMeteo.isPopupOpen()) {
-          const popupEl = selectedLayerForMeteo.getPopup().getElement();
-          if (popupEl) {
-            const popupDynamic = popupEl.querySelector('.popup-meteo-dynamic-container');
-            if (popupDynamic) popupDynamic.innerHTML = errorMsg;
-          }
-        }
+        containerRisultato.innerHTML = "<span style='color: #c0392b;'>Errore di connessione al servizio meteo.</span>";
       }
     }
 
