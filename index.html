@@ -118,6 +118,28 @@
       filter: drop-shadow(0px 0px 3px currentColor);
     }
 
+    /* Custom style per il menu a tendina nei popup */
+    details {
+      margin-top: 8px;
+      background: #eee;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    summary {
+      font-weight: bold;
+      cursor: pointer;
+      color: #333;
+    }
+
+    .details-content {
+      margin-top: 6px;
+      line-height: 1.4;
+      color: #444;
+      word-break: break-word;
+    }
+
     @media (max-width: 768px) {
       body {
         flex-direction: column;
@@ -265,6 +287,9 @@
         : null;
       const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
 
+      // Testo per lo stato del percorso
+      const statoStr = (p.stato === 'fatta') ? 'Completato' : 'Da fare';
+
       let imgHtml = '';
       if (p.image_url) {
         imgHtml = '<br><img src="' + p.image_url + '" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; margin-top:6px;">';
@@ -275,12 +300,28 @@
         linkHtml = '<br><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 8px;">Vedi su Wikiloc ↗</a>';
       }
 
+      // Dropdown menu a tendina per dettagli avanzati (escluso lo stato)
+      const detailsHtml = `
+        <details>
+          <summary>Maggiori dettagli</summary>
+          <div class="details-content">
+            <strong>Data:</strong> ${p.data_trekking || 'N/D'}<br>
+            <strong>In movimento:</strong> ${p.tempo_movimento || 'N/D'}<br>
+            <strong>In pausa:</strong> ${p.tempo_pausa || 'N/D'}<br>
+            <strong>Percorso File:</strong> <code>${p.file_location || 'N/D'}</code>
+          </div>
+        </details>
+      `;
+
+      // Popup Content con "Stato" nelle informazioni principali
       const popupContent = 
         '<strong>' + p.name + '</strong><br>' +
+        'Stato: <strong>' + statoStr + '</strong><br>' +
         'Distanza: ' + p.km + ' km<br>' +
         'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
         'Tempo totale: ' + tempoStr + '<br>' +
         'Difficoltà: ' + p.difficolta + sforzoStr +
+        detailsHtml +
         imgHtml +
         linkHtml;
 
@@ -290,11 +331,6 @@
         mouseover: function(e) {
           if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
             this.openPopup();
-          }
-        },
-        mouseout: function(e) {
-          if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
-            this.closePopup();
           }
         }
       });
