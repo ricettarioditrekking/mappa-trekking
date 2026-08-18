@@ -118,7 +118,7 @@
       filter: drop-shadow(0px 0px 3px currentColor);
     }
 
-    /* Ottimizzazione Popup: Abbastanza alto da mostrare foto e link senza scrollbar */
+    /* Forza altezza massima relativa allo schermo ed abilita scrollbar se necessario */
     .leaflet-popup-content-wrapper {
       max-height: 80vh !important;
       border-radius: 8px;
@@ -312,9 +312,8 @@
         linkHtml = '<br><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 8px;">Vedi su Wikiloc ↗</a>';
       }
 
-      // Stato reinserito nei Maggiori Dettagli
       const detailsHtml = `
-        <details>
+        <details class="popup-details">
           <summary>Maggiori dettagli</summary>
           <div class="details-content">
             <strong>Stato:</strong> ${statoStr}<br>
@@ -336,15 +335,30 @@
         imgHtml +
         linkHtml;
 
-      // Sposta la mappa abbondantemente per fare spazio verticale al popup completo
       layer.bindPopup(popupContent, {
-        autoPanPaddingTopLeft: [20, 150]
+        autoPan: true,
+        autoPanPaddingTopLeft: [20, 20],
+        autoPanPaddingBottomRight: [20, 20]
       });
 
       layer.on({
         mouseover: function(e) {
           if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
             this.openPopup();
+          }
+        },
+        popupopen: function(e) {
+          const popupNode = e.popup.getElement();
+          const detailsNode = popupNode ? popupNode.querySelector('.popup-details') : null;
+          
+          if (detailsNode) {
+            detailsNode.addEventListener('toggle', function() {
+              // Quando la tendina si apre o si chiude, diciamo a Leaflet di aggiornare ed effettuare il centramento automatico
+              e.popup.update();
+              setTimeout(() => {
+                map.panTo(e.popup.getLatLng(), { animate: true });
+              }, 50);
+            });
           }
         }
       });
