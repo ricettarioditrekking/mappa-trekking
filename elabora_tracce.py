@@ -51,11 +51,11 @@ def processa_gpx(file_path):
 
     coords = []
     elevations = []
-    timestamps = []
+    raw_points = []
     total_dist_km = 0.0
     last_lat, last_lon = None, None
 
-    # Estrazione punti
+    # Estrazione punti e metadati di ogni trackpoint
     for trkpt in root.findall('.//{*}trkpt'):
         lat = float(trkpt.attrib['lat'])
         lon = float(trkpt.attrib['lon'])
@@ -66,30 +66,73 @@ def processa_gpx(file_path):
         last_lat, last_lon = lat, lon
 
         ele_elem = trkpt.find('{*}ele')
+        ele_val = None
         if ele_elem is not None and ele_elem.text:
             try:
-                elevations.append(float(ele_elem.text))
+                ele_val = float(ele_elem.text)
             except ValueError:
                 pass
+        elevations.append(ele_val)
 
         time_elem = trkpt.find('{*}time')
+        ts_val = None
         if time_elem is not None and time_elem.text:
             try:
                 ts = time_elem.text.strip().replace('Z', '+00:00')
-                timestamps.append(datetime.fromisoformat(ts))
+                ts_val = datetime.fromisoformat(ts)
             except ValueError:
                 pass
+
+        raw_points.append({'lat': lat, 'lon': lon, 'time': ts_val})
 
     km = round(total_dist_km, 1)
     dislivello_pos, dislivello_neg = calcola_dislivelli_wikiloc(elevations, window_size=9)
 
-    # Tempo stimato o effettivo
-    if len(timestamps) >= 2:
-        total_minutes = (timestamps[-1] - timestamps[0]).total_seconds() / 60
-        hours = int(total_minutes // 60)
-        minutes = int(total_minutes % 60)
+    # Filtraggio punti validi per calcolo tempi
+    valid_time_pts = [p for p in raw_points if p['time'] is not None]
+
+    data_trekking = "Non specificata"
+    tempo_mov_str = "N/D"
+    tempo_pausa_str = "N/D"
+
+    if len(valid_time_pts) >= 2:
+        start_time = valid_time_pts[0]['time']
+        end_time = valid_time_pts[-1]['time']
+
+        data_trekking = start_time.strftime("%d/%m/%Y")
+
+        total_seconds = (end_time - start_time).total_seconds()
+        total_minutes = int(total_seconds / 60)
+        hours = total_minutes // 60
+        minutes = total_minutes % 60
         tempo_testo = f"{hours}h {minutes:02d}m"
         durata_cat = "Mezza Giornata" if total_minutes <= 240 else "Giornata Intera"
+
+        # Calcolo analitico Movimento vs Pausa
+        mov_seconds = 0.0
+        pause_seconds = 0.0
+
+        for i in range(1, len(valid_time_pts)):
+            pt1 = valid_time_pts[i - 1]
+            pt2 = valid_time_pts[i]
+
+            dt = (pt2['time'] - pt1['time']).total_seconds()
+            if dt > 0:
+                dist_km = haversine(pt1['lat'], pt1['lon'], pt2['lat'], pt2['lon'])
+                speed_kmh = dist_km / (dt / 3600.0)
+
+                # Soglia movimento: >= 0.8 km/h
+                if speed_kmh >= 0.8:
+                    mov_seconds += dt
+                else:
+                    pause_seconds += dt
+
+        mov_m = int(mov_seconds // 60)
+        tempo_mov_str = f"{mov_m // 60}h {mov_m % 60:02d}m"
+
+        pau_m = int(pause_seconds // 60)
+        tempo_pausa_str = f"{pau_m // 60}h {pau_m % 60:02d}m"
+
     else:
         est_hours = round((km / 4.0) + (dislivello_pos / 400.0), 1)
         tempo_testo = f"~{est_hours} ore"
@@ -129,14 +172,14 @@ def processa_gpx(file_path):
             image_url = candidate.replace('\\', '/')
             break
 
-    # Riconoscimento dello STATO (fatta / non_fatta) in base al percorso della cartella
+    # Riconoscimento dello STATO (fatta / non_fatta)
     normalized_path = file_path.replace('\\', '/').lower()
     if '/fatte/' in normalized_path or normalized_path.startswith('fatte/'):
         stato = "fatta"
     elif '/non_fatte/' in normalized_path or normalized_path.startswith('non_fatte/'):
         stato = "non_fatta"
     else:
-        stato = "non_fatta"  # Valore di default se si trova nella radice di tracce/
+        stato = "non_fatta"
 
     return {
         "type": "Feature",
@@ -149,7 +192,11 @@ def processa_gpx(file_path):
             "sforzo": effort_score,
             "durata": durata_cat,
             "tempo_effettivo": tempo_testo,
+            "tempo_movimento": tempo_mov_str,
+            "tempo_pausa": tempo_pausa_str,
+            "data_trekking": data_trekking,
             "stato": stato,
+            "file_location": file_path.replace('\\', '/'),
             "link": wikiloc_link,
             "image_url": image_url
         },
