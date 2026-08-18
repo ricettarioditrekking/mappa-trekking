@@ -384,9 +384,8 @@
 
       const fileKey = p.file_location ? p.file_location.replace(/[^a-zA-Z0-9]/g, '_') : Math.random();
 
-      let linkHtml = p.link ? `<div style="margin-top: 4px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">` +
+      let linkHtml = p.link ? `<div style="margin-top: 4px; margin-bottom: 10px;">` +
                               `<a href="${p.link}" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a>` +
-                              `<span id="popup-emoji-${fileKey}" style="font-size: 1.1rem;" title="Meteo medio"></span>` +
                               `</div>` : '';
 
       let imgHtml = p.image_url ? '<img src="' + p.image_url + '" style="width:100%; max-height:150px; object-fit:cover; border-radius:6px; margin-bottom:12px;">' : '';
@@ -406,13 +405,17 @@
 
       const meteoPopupHtml = `<div id="popup-meteo-content-${fileKey}" style="margin-top: 10px; font-size: 0.85rem;"></div>`;
 
+      // Riga fissa "Meteo previsto: ..." con uno span dinamico per l'aggiornamento
+      const meteoSummaryLine = `<div style="margin-top: 4px; font-weight: bold; color: #2c3e50;">Meteo previsto: <span id="popup-meteo-summary-${fileKey}">in attesa...</span></div>`;
+
       const popupContent = 
         '<div style="font-size: 1.05rem; font-weight: bold; margin-bottom: 6px; padding-right: 25px; line-height: 1.3;">' + p.name + '</div>' +
         linkHtml + imgHtml +
         'Distanza: ' + p.km + ' km<br>' +
         'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
         'Tempo totale: ' + tempoStr + '<br>' +
-        'Difficoltà: ' + p.difficolta + sforzoStr +
+        'Difficoltà: ' + p.difficolta + sforzoStr + '<br>' +
+        meteoSummaryLine +
         meteoPopupHtml +
         detailsHtml;
 
@@ -454,13 +457,13 @@
       const containerRisultato = document.getElementById('risultato-meteo');
       
       let popupMeteoContainer = null;
-      let popupEmojiContainer = null;
+      let popupSummaryContainer = null;
       if (selectedLayerForMeteo && selectedLayerForMeteo.isPopupOpen()) {
         const popupEl = selectedLayerForMeteo.getPopup().getElement();
         if (popupEl) {
           const fileKey = selectedLayerForMeteo.feature.properties.file_location ? selectedLayerForMeteo.feature.properties.file_location.replace(/[^a-zA-Z0-9]/g, '_') : '';
           popupMeteoContainer = popupEl.querySelector(`#popup-meteo-content-${fileKey}`);
-          popupEmojiContainer = popupEl.querySelector(`#popup-emoji-${fileKey}`);
+          popupSummaryContainer = popupEl.querySelector(`#popup-meteo-summary-${fileKey}`);
         }
       }
 
@@ -504,6 +507,7 @@
       const loadingMsg = "Caricamento meteo in corso...";
       containerRisultato.innerHTML = loadingMsg;
       if (popupMeteoContainer) popupMeteoContainer.innerHTML = loadingMsg;
+      if (popupSummaryContainer) popupSummaryContainer.textContent = "Caricamento...";
 
       try {
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability&timezone=auto`;
@@ -520,6 +524,7 @@
           orarioDettagliHtml += `<strong>Previsioni ora per ora:</strong><br>`;
 
           let sommaPioggia = 0;
+          let sommaTemp = 0;
           let conteggioSlot = 0;
 
           for (let i = 0; i <= durataOre; i++) {
@@ -530,6 +535,7 @@
               const pioggiaSlot = data.hourly.precipitation_probability[currentIndex];
               
               sommaPioggia += pioggiaSlot;
+              sommaTemp += tempSlot;
               conteggioSlot++;
 
               let etichettaTempo = (i === 0) ? "Partenza" : (i === durataOre ? "Arrivo" : `+${i}h`);
@@ -539,13 +545,17 @@
           orarioDettagliHtml += `</div>`;
 
           const mediaPioggia = conteggioSlot > 0 ? (sommaPioggia / conteggioSlot) : 0;
+          const mediaTemp = conteggioSlot > 0 ? (sommaTemp / conteggioSlot).toFixed(1) : 0;
           const emojiMedio = getMeteoEmoji(mediaPioggia);
 
-          if (popupEmojiContainer) {
-            popupEmojiContainer.textContent = emojiMedio;
+          const summaryText = `${emojiMedio} (${mediaTemp}°C)`;
+
+          if (popupSummaryContainer) {
+            popupSummaryContainer.textContent = summaryText;
           }
 
-          containerRisultato.innerHTML = orarioDettagliHtml;
+          containerRisultato.innerHTML = `<div style="margin-bottom: 6px; font-weight: bold;">Meteo previsto: ${summaryText}</div>` + orarioDettagliHtml;
+          
           if (popupMeteoContainer) {
             popupMeteoContainer.innerHTML = orarioDettagliHtml;
             selectedLayerForMeteo.getPopup().update();
@@ -553,6 +563,7 @@
         } else {
           const errorMsg = "<span style='color: #d35400;'>Orario non disponibile nelle previsioni.</span>";
           containerRisultato.innerHTML = errorMsg;
+          if (popupSummaryContainer) popupSummaryContainer.textContent = "N/D";
           if (popupMeteoContainer) popupMeteoContainer.innerHTML = errorMsg;
         }
 
@@ -560,6 +571,7 @@
         console.error("Errore nel recupero meteo:", error);
         const errorMsg = "<span style='color: #c0392b;'>Errore di connessione al servizio meteo.</span>";
         containerRisultato.innerHTML = errorMsg;
+        if (popupSummaryContainer) popupSummaryContainer.textContent = "Errore";
         if (popupMeteoContainer) popupMeteoContainer.innerHTML = errorMsg;
       }
     }
