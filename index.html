@@ -107,66 +107,103 @@
       margin-top: 25px;
     }
 
-    /* Map Container */
     #map {
       flex: 1;
       height: 100%;
     }
 
-    /* Neon glow effect on tracks */
     .leaflet-interactive {
       filter: drop-shadow(0px 0px 3px currentColor);
     }
 
     /* =========================================
-       POPUP A DESTRA - FIX DEFINITIVO
+       POPUP A DESTRA - DESIGN, MARGINI E SCROLLBAR
        ========================================= */
 
-    /* 1. Rimuoviamo il margine nativo di Leaflet che sballava i calcoli Y */
     .popup-right {
       margin-bottom: 0 !important; 
     }
 
-    /* 2. Disattiviamo completamente il tip di default Leaflet */
     .popup-right .leaflet-popup-tip-container {
       display: none !important;
     }
 
-    /* 3. Base del riquadro bianco */
+    /* Base del riquadro bianco con margine interno di respiro */
     .popup-right .leaflet-popup-content-wrapper {
       position: relative;
-      border-radius: 8px;
-      padding: 0;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+      border-radius: 12px;
+      padding: 6px; /* Dà respiro attorno a tutto il popup */
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
     }
 
-    /* 4. Il NOSTRO chevron laterale saldato, posizionato dal basso */
+    /* Chevron saldato e allineato ai nuovi margini */
     .popup-right .leaflet-popup-content-wrapper::before {
       content: '';
       position: absolute;
-      left: -6px;            /* Sporge millimetricamente a sx */
-      bottom: 24px;          /* Distanza fissa dal fondo (non si sposta più in verticale) */
+      left: -6px;
+      bottom: 26px; 
       width: 14px;
       height: 14px;
       background: #ffffff;
       transform: rotate(45deg);
-      box-shadow: -2px 2px 3px rgba(0,0,0,0.15); /* Ombra verso il basso/sinistra */
-      z-index: -1;           /* Fonde col riquadro principale */
+      box-shadow: -2px 2px 3px rgba(0,0,0,0.15);
+      z-index: -1;
       border-radius: 2px;
     }
 
-    /* 5. Contenuto: definisce lo spazio interno ed evita !important sulla larghezza esterna */
+    /* Spaziature generose del contenuto */
     .popup-right .leaflet-popup-content {
-      margin: 12px 14px !important;
+      margin: 16px 22px 16px 16px !important; /* Margine destro più ampio per allontanarsi dalla scrollbar */
+      padding-right: 14px !important; /* Spazio protettivo tra il testo e la scrollbar */
       max-height: 320px !important;
       overflow-y: auto !important;
-      line-height: 1.4;
+      line-height: 1.5;
       color: #333;
+    }
+
+    /* --- Scrollbar Custom Elegante --- */
+    .popup-right .leaflet-popup-content::-webkit-scrollbar {
+      width: 6px;
+    }
+    .popup-right .leaflet-popup-content::-webkit-scrollbar-track {
+      background: #f1f1f1; 
+      border-radius: 4px;
+    }
+    .popup-right .leaflet-popup-content::-webkit-scrollbar-thumb {
+      background: #ccc; 
+      border-radius: 4px;
+    }
+    .popup-right .leaflet-popup-content::-webkit-scrollbar-thumb:hover {
+      background: #aaa; 
+    }
+
+    /* --- Nuova "X" di chiusura: Bottone Premium Flottante --- */
+    .popup-right .leaflet-popup-close-button {
+      top: 10px !important;
+      right: 10px !important;
+      width: 26px !important;
+      height: 26px !important;
+      line-height: 26px !important;
+      text-align: center !important;
+      font-size: 16px !important;
+      font-weight: bold;
+      color: #555 !important;
+      background: #ffffff !important;
+      border-radius: 50%;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 10;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .popup-right .leaflet-popup-close-button:hover {
+      color: #000 !important;
+      background: #f4f4f4 !important;
+      transform: scale(1.05);
     }
 
     /* Custom style per il menu a tendina nei popup */
     details {
-      margin-top: 10px;
+      margin-top: 12px;
       background: #f7f7f7;
       padding: 8px 10px;
       border-radius: 6px;
@@ -184,7 +221,7 @@
     .details-content {
       margin-top: 8px;
       color: #444;
-      word-break: break-all;
+      word-break: break-word;
     }
 
     @media (max-width: 768px) {
@@ -281,7 +318,6 @@
     <div id="stats">Mostrati: 0 di 0 percorsi</div>
   </div>
 
-  <!-- Map Container -->
   <div id="map"></div>
 
   <!-- Leaflet JS -->
@@ -291,10 +327,8 @@
     let allData = null;
     let geoJsonLayer = null;
 
-    // 1. Initialize Map
     const map = L.map('map').setView([46.4983, 11.3548], 10);
 
-    // 2. OpenTopoMap
     L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
       maxZoom: 17,
       attribution: 'Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)'
@@ -318,8 +352,8 @@
       const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
       const statoStr = (p.stato === 'fatta') ? 'Completato' : 'Da fare';
 
-      let linkHtml = p.link ? '<div style="margin-top: 2px; margin-bottom: 6px;"><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a></div>' : '';
-      let imgHtml = p.image_url ? '<img src="' + p.image_url + '" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; margin-bottom:8px;">' : '';
+      let linkHtml = p.link ? '<div style="margin-top: 4px; margin-bottom: 10px;"><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a></div>' : '';
+      let imgHtml = p.image_url ? '<img src="' + p.image_url + '" style="width:100%; max-height:150px; object-fit:cover; border-radius:6px; margin-bottom:12px;">' : '';
 
       const detailsHtml = `
         <details>
@@ -329,13 +363,14 @@
             <strong>Data:</strong> ${p.data_trekking || 'N/D'}<br>
             <strong>In movimento:</strong> ${p.tempo_movimento || 'N/D'}<br>
             <strong>In pausa:</strong> ${p.tempo_pausa || 'N/D'}<br>
-            <strong>Percorso File:</strong> <code>${p.file_location || 'N/D'}</code>
+            <strong>File:</strong> <code>${p.file_location || 'N/D'}</code>
           </div>
         </details>
       `;
 
+      // Il titolo ora ha un margine a destra (padding-right: 25px) così da non andare MAI sotto la nuova X di chiusura
       const popupContent = 
-        '<strong>' + p.name + '</strong><br>' +
+        '<div style="font-size: 1.05rem; font-weight: bold; margin-bottom: 6px; padding-right: 25px; line-height: 1.3;">' + p.name + '</div>' +
         linkHtml + imgHtml +
         'Distanza: ' + p.km + ' km<br>' +
         'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
@@ -343,25 +378,21 @@
         'Difficoltà: ' + p.difficolta + sforzoStr +
         detailsHtml;
 
-      // GEOMETRIA CALCOLATA:
-      // minWidth: 272 + 28px di margini CSS = 300px larghezza totale.
-      // offset [159, 31]: centra al millimetro la nuova freccia sul punto mappa senza confondere il motore di Leaflet.
-      // autoPanPadding [40, 40]: impedisce categoricamente al popup di finire tagliato fuori dallo schermo!
+      // Leggermente allargato (285px) per ospitare comodamente i nuovi padding
       layer.bindPopup(popupContent, {
         className: 'popup-right',
-        minWidth: 272,
-        maxWidth: 272,
-        offset: [159, 31],
-        autoPanPadding: [40, 40]
+        minWidth: 285,
+        maxWidth: 285,
+        offset: [168, 31],
+        autoPanPadding: [50, 50]
       });
 
-      // MAGIC FIX: ricalcola e ri-centra il popup se "Maggiori dettagli" allunga la finestra!
       layer.on('popupopen', function(e) {
         const popup = e.popup;
         const detailsElem = popup.getElement().querySelector('details');
         if (detailsElem) {
           detailsElem.addEventListener('toggle', function() {
-            popup.update(); // Fa ricalcolare a Leaflet l'altezza e l'auto-pan, niente più fughe dallo schermo
+            popup.update(); 
           });
         }
       });
