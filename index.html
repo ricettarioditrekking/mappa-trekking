@@ -353,10 +353,36 @@
 
     const map = L.map('map').setView([46.4983, 11.3548], 10);
 
-    L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
       maxZoom: 17,
       attribution: 'Map data: © OpenStreetMap contributors, SRTS | Map style: © OpenTopoMap (CC-BY-SA)'
     }).addTo(map);
+
+    // Integrazione Radar Precipitazioni in tempo reale via RainViewer
+    fetch('https://api.rainviewer.com/public/weather-maps.json')
+      .then(response => response.json())
+      .then(data => {
+        if (data && data.radar && data.radar.past && data.radar.past.length > 0) {
+          const latestTimestamp = data.radar.past[data.radar.past.length - 1].time;
+          
+          const precipitationLayer = L.tileLayer(`https://tile.rainviewer.com/v2/radar/${latestTimestamp}/256/{z}/{x}/{y}/2/1_1.png`, {
+            attribution: 'Radar meteo: © RainViewer',
+            opacity: 0.6,
+            zIndex: 400
+          });
+
+          const baseMaps = {
+            "OpenTopoMap": topoLayer
+          };
+
+          const overlayMaps = {
+            "🌧️ Radar Precipitazioni": precipitationLayer
+          };
+          
+          L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+        }
+      })
+      .catch(err => console.error("Errore caricamento radar meteo:", err));
 
     function getNeonColor(difficolta) {
       switch (difficolta) {
@@ -401,7 +427,6 @@
         </details>
       `;
 
-      // Popup pulito senza alcuna riga o accenno al meteo
       const popupContent = 
         '<div style="font-size: 1.05rem; font-weight: bold; margin-bottom: 6px; padding-right: 25px; line-height: 1.3;">' + p.name + '</div>' +
         linkHtml + imgHtml +
@@ -524,7 +549,6 @@
           const emojiMedio = getMeteoEmoji(mediaPioggia);
           const summaryText = conteggioSlot > 0 ? `${emojiMedio} (${minTemp}°C - ${maxTemp}°C)` : `${emojiMedio} (N/D)`;
 
-          // Aggiorna solo il pannello laterale
           containerRisultato.innerHTML = `<div style="margin-bottom: 6px; font-weight: bold;">Meteo previsto: ${summaryText}</div>` + orarioDettagliHtml;
 
         } else {
