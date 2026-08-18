@@ -369,10 +369,49 @@ function getNeonColor(difficolta) {
   }
 }
 
-function getMeteoEmoji(pioggiaProb) {
-  if (pioggiaProb > 60) return '🌧️';
-  if (pioggiaProb > 30) return '⛅';
-  return '☀️';
+// MAPPATURA UFFICIALE CODICI METEO WMO DI OPEN-METEO
+function getMeteoEmoji(weatherCode) {
+  switch (weatherCode) {
+    case 0: 
+      return '☀️'; // Soleggiato / Sereno
+    case 1: 
+    case 2: 
+      return '⛅'; // Poco o parzialmente nuvoloso
+    case 3: 
+      return '☁️'; // Nuvoloso / Coperto (senza pioggia)
+    case 45:
+    case 48: 
+      return '🌫️'; // Nebbia
+    case 51:
+    case 53:
+    case 55:
+    case 56:
+    case 57: 
+      return '🌧️'; // Pioggerella / Pioggia leggera
+    case 61:
+    case 63:
+    case 65:
+    case 66:
+    case 67: 
+      return '🌧️'; // Pioggia
+    case 71:
+    case 73:
+    case 75:
+    case 77:
+    case 85:
+    case 86: 
+      return '❄️'; // Neve
+    case 80:
+    case 81:
+    case 82: 
+      return '🌦️'; // Rovesci di pioggia
+    case 95:
+    case 96:
+    case 99: 
+      return '⚡'; // Temporale
+    default: 
+      return '❓';
+  }
 }
 
 function onEachFeature(feature, layer) {
@@ -458,7 +497,7 @@ async function caricaMeteoTraccia() {
   containerRisultato.innerHTML = "Caricamento meteo in corso...";
 
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability,weathercode&timezone=auto`;
     const response = await fetch(url);
     const data = await response.json();
     
@@ -467,10 +506,10 @@ async function caricaMeteoTraccia() {
     
     if (indexInizio !== -1) {
       let orarioDettagliHtml = `<div style="background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd; max-height: 180px; overflow-y: auto;"><strong style="color: #2c3e50; font-size: 0.9rem; display: block; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 3px;">📍 ${nomePercorso}</strong><strong>Previsioni ora per ora:</strong><br>`;
-      let sommaPioggia = 0;
       let minTemp = Infinity;
       let maxTemp = -Infinity;
       let conteggioSlot = 0;
+      let primoWeatherCode = data.hourly.weathercode[indexInizio];
 
       for (let i = 0; i <= durataOre; i++) {
         const currentIndex = indexInizio + i;
@@ -478,21 +517,21 @@ async function caricaMeteoTraccia() {
           const oraSlot = data.hourly.time[currentIndex].split('T')[1];
           const tempSlot = data.hourly.temperature_2m[currentIndex];
           const pioggiaSlot = data.hourly.precipitation_probability[currentIndex];
+          const wCode = data.hourly.weathercode[currentIndex];
+          const emojiSlot = getMeteoEmoji(wCode);
           
-          sommaPioggia += pioggiaSlot;
           if (tempSlot < minTemp) minTemp = tempSlot;
           if (tempSlot > maxTemp) maxTemp = tempSlot;
           conteggioSlot++;
 
           let etichettaTempo = (i === 0) ? "Partenza" : (i === durataOre ? "Arrivo" : `+${i}h`);
-          orarioDettagliHtml += `• <strong>${oraSlot}</strong> (${etichettaTempo}): ${tempSlot}°C, 💧${pioggiaSlot}%<br>`;
+          orarioDettagliHtml += `• <strong>${oraSlot}</strong> (${etichettaTempo}): ${emojiSlot} ${tempSlot}°C, 💧${pioggiaSlot}%<br>`;
         }
       }
       orarioDettagliHtml += `</div>`;
 
-      const mediaPioggia = conteggioSlot > 0 ? (sommaPioggia / conteggioSlot) : 0;
-      const emojiMedio = getMeteoEmoji(mediaPioggia);
-      const summaryText = conteggioSlot > 0 ? `${emojiMedio} (${minTemp}°C - ${maxTemp}°C)` : `${emojiMedio} (N/D)`;
+      const emojiPartenza = getMeteoEmoji(primoWeatherCode);
+      const summaryText = conteggioSlot > 0 ? `${emojiPartenza} (${minTemp}°C - ${maxTemp}°C)` : `${emojiPartenza} (N/D)`;
 
       containerRisultato.innerHTML = `<div style="margin-bottom: 6px; font-weight: bold;">Meteo previsto per la traccia: ${summaryText}</div>` + orarioDettagliHtml;
     } else {
@@ -531,7 +570,7 @@ function updateRegionalWeather() {
   const latString = latitudeQueries.join(',');
   const lonString = longitudeQueries.join(',');
 
-  const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latString}&longitude=${lonString}&start_date=${selectedDate}&end_date=${selectedDate}&hourly=temperature_2m,precipitation,precipitation_probability&timezone=auto`;
+  const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latString}&longitude=${lonString}&start_date=${selectedDate}&end_date=${selectedDate}&hourly=temperature_2m,precipitation,precipitation_probability,weathercode&timezone=auto`;
 
   fetch(apiUrl)
     .then(res => res.json())
@@ -554,13 +593,12 @@ function renderWeatherGrid() {
     const temperature = location.hourly.temperature_2m[targetHour];
     const rain = location.hourly.precipitation[targetHour];
     const rainProb = location.hourly.precipitation_probability[targetHour];
+    const wCode = location.hourly.weathercode[targetHour];
+    const statusSymbol = getMeteoEmoji(wCode);
 
-    let areaColor = '#33cc33';
-    let statusSymbol = '☀️';
-
+    let areaColor = '#33cc33'; // Verde per bel tempo / asciutto
     if (rain > 0 || rainProb > 40) {
-      areaColor = rain > 1 ? '#ff3333' : '#ff9900';
-      statusSymbol = '🌧️';
+      areaColor = rain > 1 ? '#ff3333' : '#ff9900'; // Rosso per pioggia, Arancione per probabile
     }
 
     const currentZoom = map.getZoom();
