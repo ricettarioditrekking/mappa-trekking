@@ -119,64 +119,70 @@
     }
 
     /* =========================================
-       POPUP A DESTRA CON FRECCIA FISSA INFALLIBILE
+       POPUP A DESTRA - FIX DEFINITIVO
        ========================================= */
-       
-    /* 1. Nascondiamo completamente la freccia nativa difettosa di Leaflet */
-    .popup-right .leaflet-popup-tip-container {
-      display: none !important; 
+
+    /* 1. Rimuoviamo il margine nativo di Leaflet che sballava i calcoli Y */
+    .popup-right {
+      margin-bottom: 0 !important; 
     }
 
-    /* 2. Struttura del blocco bianco principale */
+    /* 2. Disattiviamo completamente il tip di default Leaflet */
+    .popup-right .leaflet-popup-tip-container {
+      display: none !important;
+    }
+
+    /* 3. Base del riquadro bianco */
     .popup-right .leaflet-popup-content-wrapper {
-      width: 300px !important;
-      max-height: 380px !important;
+      position: relative;
       border-radius: 8px;
       padding: 0;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
-      position: relative; /* Indispensabile per ancorare la freccia custom */
+      box-shadow: 0 4px 18px rgba(0,0,0,0.25);
     }
 
-    /* 3. La NUOVA freccia incollata al blocco e fissa verso il basso */
+    /* 4. Il NOSTRO chevron laterale saldato, posizionato dal basso */
     .popup-right .leaflet-popup-content-wrapper::before {
       content: '';
       position: absolute;
-      left: -6px;            /* Sporge millimetricamente a sinistra dal popup */
-      bottom: 14px;          /* DISTANZA FISSA DAL BASSO! Così aprendo i dettagli non slitterà mai! */
-      width: 16px;
-      height: 16px;
+      left: -6px;            /* Sporge millimetricamente a sx */
+      bottom: 24px;          /* Distanza fissa dal fondo (non si sposta più in verticale) */
+      width: 14px;
+      height: 14px;
       background: #ffffff;
       transform: rotate(45deg);
-      box-shadow: -2px 2px 4px rgba(0,0,0,0.15); /* Ombreggiatura calibrata */
-      z-index: -1;           /* La fa fondere dietro al riquadro nascondendone metà */
+      box-shadow: -2px 2px 3px rgba(0,0,0,0.15); /* Ombra verso il basso/sinistra */
+      z-index: -1;           /* Fonde col riquadro principale */
       border-radius: 2px;
     }
 
+    /* 5. Contenuto: definisce lo spazio interno ed evita !important sulla larghezza esterna */
     .popup-right .leaflet-popup-content {
-      margin: 14px !important;
-      max-height: 340px !important;
+      margin: 12px 14px !important;
+      max-height: 320px !important;
       overflow-y: auto !important;
-      padding-right: 6px;
       line-height: 1.4;
+      color: #333;
     }
 
-    /* Stili interni del popup */
+    /* Custom style per il menu a tendina nei popup */
     details {
       margin-top: 10px;
-      background: #eee;
-      padding: 6px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
+      background: #f7f7f7;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      border: 1px solid #eaeaea;
     }
 
     summary {
       font-weight: bold;
       cursor: pointer;
-      color: #333;
+      color: #222;
+      outline: none;
     }
 
     .details-content {
-      margin-top: 6px;
+      margin-top: 8px;
       color: #444;
       word-break: break-all;
     }
@@ -202,7 +208,6 @@
   <div id="sidebar">
     <h2>Filtri Percorsi</h2>
 
-    <!-- Stato Percorso -->
     <div class="filter-group">
       <label>Stato Percorso:</label>
       <div class="checkbox-group">
@@ -211,7 +216,6 @@
       </div>
     </div>
 
-    <!-- Difficoltà -->
     <div class="filter-group">
       <label for="filter-difficolta">Difficoltà:</label>
       <select id="filter-difficolta">
@@ -223,7 +227,6 @@
       </select>
     </div>
 
-    <!-- Distanza -->
     <div class="filter-group">
       <label>Distanza (Km): <span id="val-dist" class="range-val">0 - 50 km</span></label>
       <div class="range-sliders">
@@ -238,7 +241,6 @@
       </div>
     </div>
 
-    <!-- Dislivello + -->
     <div class="filter-group">
       <label>Dislivello + (m): <span id="val-dis-pos" class="range-val">0 - 2500 m</span></label>
       <div class="range-sliders">
@@ -253,7 +255,6 @@
       </div>
     </div>
 
-    <!-- Dislivello - -->
     <div class="filter-group">
       <label>Dislivello - (m): <span id="val-dis-neg" class="range-val">0 - 2500 m</span></label>
       <div class="range-sliders">
@@ -268,7 +269,6 @@
       </div>
     </div>
 
-    <!-- Categoria Durata -->
     <div class="filter-group">
       <label for="filter-durata">Categoria Durata:</label>
       <select id="filter-durata">
@@ -294,13 +294,12 @@
     // 1. Initialize Map
     const map = L.map('map').setView([46.4983, 11.3548], 10);
 
-    // 2. OpenTopoMap Topographic Tile Layer
+    // 2. OpenTopoMap
     L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
       maxZoom: 17,
       attribution: 'Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)'
     }).addTo(map);
 
-    // 3. Neon Color Mapping
     function getNeonColor(difficolta) {
       switch (difficolta) {
         case 'Facile': return '#00FF66';
@@ -311,28 +310,16 @@
       }
     }
 
-    // 4. Feature Popup and Interactions
     function onEachFeature(feature, layer) {
       const p = feature.properties;
-      
       const dislivelloNeg = (p.dislivello_neg !== undefined && p.dislivello_neg !== null) ? p.dislivello_neg : 0;
       const tempoStr = p.tempo_effettivo || p.durata || '';
-
-      const sforzoVal = (p.sforzo !== undefined && p.sforzo !== null && !isNaN(p.sforzo)) 
-        ? Number(p.sforzo).toFixed(1) : null;
+      const sforzoVal = (p.sforzo !== undefined && p.sforzo !== null && !isNaN(p.sforzo)) ? Number(p.sforzo).toFixed(1) : null;
       const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
-
       const statoStr = (p.stato === 'fatta') ? 'Completato' : 'Da fare';
 
-      let linkHtml = '';
-      if (p.link) {
-        linkHtml = '<div style="margin-top: 2px; margin-bottom: 6px;"><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a></div>';
-      }
-
-      let imgHtml = '';
-      if (p.image_url) {
-        imgHtml = '<img src="' + p.image_url + '" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; margin-bottom:8px;">';
-      }
+      let linkHtml = p.link ? '<div style="margin-top: 2px; margin-bottom: 6px;"><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a></div>' : '';
+      let imgHtml = p.image_url ? '<img src="' + p.image_url + '" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; margin-bottom:8px;">' : '';
 
       const detailsHtml = `
         <details>
@@ -356,13 +343,27 @@
         'Difficoltà: ' + p.difficolta + sforzoStr +
         detailsHtml;
 
-      // offset: [X, Y]. X = 165 sposta tutto a destra oltre la metà del popup per farlo affiancare. Y = 22 lo abbassa centrando al millimetro la nuova freccia al tracciato.
+      // GEOMETRIA CALCOLATA:
+      // minWidth: 272 + 28px di margini CSS = 300px larghezza totale.
+      // offset [159, 31]: centra al millimetro la nuova freccia sul punto mappa senza confondere il motore di Leaflet.
+      // autoPanPadding [40, 40]: impedisce categoricamente al popup di finire tagliato fuori dallo schermo!
       layer.bindPopup(popupContent, {
         className: 'popup-right',
-        minWidth: 300,
-        maxWidth: 300,
-        offset: [165, 22],
-        autoPanPaddingTopLeft: [20, 20]
+        minWidth: 272,
+        maxWidth: 272,
+        offset: [159, 31],
+        autoPanPadding: [40, 40]
+      });
+
+      // MAGIC FIX: ricalcola e ri-centra il popup se "Maggiori dettagli" allunga la finestra!
+      layer.on('popupopen', function(e) {
+        const popup = e.popup;
+        const detailsElem = popup.getElement().querySelector('details');
+        if (detailsElem) {
+          detailsElem.addEventListener('toggle', function() {
+            popup.update(); // Fa ricalcolare a Leaflet l'altezza e l'auto-pan, niente più fughe dallo schermo
+          });
+        }
       });
 
       layer.on({
@@ -374,7 +375,6 @@
       });
     }
 
-    // 5. Filtering Logic
     function applyFilters() {
       if (!allData) return;
 
@@ -431,7 +431,6 @@
       document.getElementById('stats').textContent = `Mostrati: ${filteredFeatures.length} di ${allData.features.length} percorsi`;
     }
 
-    // 6. Event Listeners
     document.getElementById('filter-difficolta').addEventListener('change', applyFilters);
     document.getElementById('filter-durata').addEventListener('change', applyFilters);
     document.getElementById('chk-fatte').addEventListener('change', applyFilters);
@@ -441,7 +440,6 @@
       document.getElementById(id).addEventListener('input', applyFilters);
     });
 
-    // 7. Fetch GeoJSON Data
     fetch('percorsi.geojson?v=' + new Date().getTime())
       .then(response => response.json())
       .then(data => {
