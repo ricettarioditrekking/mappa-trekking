@@ -149,12 +149,17 @@ let currentStepIndex = 4;
 let heatmap3DaysCache = null;
 
 let heatLayer = L.heatLayer([], {
-  radius: 80, 
-  blur: 55, 
+  radius: 110, 
+  blur: 70,    
   maxZoom: 12,
   max: 100,
-  minOpacity: 0.3,
-  gradient: { 0.15: '#00bfff', 0.45: '#0000ff', 0.75: '#ffaa00', 1.00: '#ff0000' }
+  minOpacity: 0.25,
+  gradient: { 
+    0.2: '#00bfff', 
+    0.4: '#0000ff', 
+    0.7: '#ffaa00', 
+    1.0: '#ff0000'  
+  }
 });
 
 const map = L.map('map').setView([46.4983, 11.3548], 10);
@@ -252,7 +257,9 @@ function renderMeteoResult(data, nomePercorso, dataInput, oraInput) {
         orarioDettagliHtml += `• <strong>${oraSlot}</strong>: ${emojiSlot} ${tempSlot}°C, 💧${pioggiaSlot}%<br>`;
       }
     }
-    container.innerHTML = `<div>Traccia: ${peggiorEmoji} (${minTemp}°C - ${maxTemp}°C)</div>` + orarioDettagliHtml + `</div>`;
+    // Inserito il titolo del tracciato in evidenza nel pannello meteo
+    container.innerHTML = `<div style="font-weight: bold; color: #2c3e50; margin-bottom: 4px; border-bottom: 1px solid #ccc; padding-bottom: 2px;">📍 ${nomePercorso}</div>` +
+                          `<div>Sintesi: ${peggiorEmoji} (${minTemp}°C - ${maxTemp}°C)</div>` + orarioDettagliHtml + `</div>`;
   } else {
     container.innerHTML = "Dati non disponibili per questa data.";
   }
@@ -286,11 +293,6 @@ async function caricaMeteoTraccia() {
   }
 }
 
-// -------------------------------------------------------------
-// L'ALGORITMO DEFINITIVO: HASHING SPAZIALE ADATTIVO
-// Genera le griglie regionali SOLO dove ci sono sentieri e scala 
-// la risoluzione in automatico per non superare mai le chiamate API
-// -------------------------------------------------------------
 async function load3DaysWeatherGrid() {
   if (heatmap3DaysCache) {
     renderWeatherGridFromCache();
@@ -300,55 +302,33 @@ async function load3DaysWeatherGrid() {
   const activeFeatures = geoJsonLayer ? geoJsonLayer.toGeoJSON().features : (allData ? allData.features : []);
   if (activeFeatures.length === 0) return;
 
-  const MAX_SAFE_POINTS = 45; // Mantieniti un po' sotto i 50 per scurezza
-  let gridSize = 0.15; // Inizia con alta risoluzione (circa 15km a cella)
-  let finalPoints = [];
+  let pointSet = new Set();
+  const step = 0.025; 
+  const range = 3; 
 
-  // Ciclo adattivo: se i punti regionali sono troppi (limite API), 
-  // allarga la scacchiera e unifica le regioni finché non rientrano nel limite.
-  while (gridSize <= 3.0) {
-    let pointSet = new Set();
-    
-    activeFeatures.forEach(feature => {
-      const tempL = L.geoJSON(feature);
-      if (tempL.getBounds().isValid()) {
-        const center = tempL.getBounds().getCenter();
-        
-        // "Aggancia" il sentiero alla cella più vicina della scacchiera
-        const latCell = Math.round(center.lat / gridSize) * gridSize;
-        const lonCell = Math.round(center.lng / gridSize) * gridSize;
-
-        // Aggiunge la cella e gli 8 vicini per formare la "regione" meteo (3x3)
-        for (let i = -1; i <= 1; i++) {
-          for (let j = -1; j <= 1; j++) {
-            const pLat = (latCell + i * gridSize).toFixed(3);
-            const pLon = (lonCell + j * gridSize).toFixed(3);
-            pointSet.add(`${pLat},${pLon}`);
-          }
+  activeFeatures.forEach(feature => {
+    const tempL = L.geoJSON(feature);
+    if (tempL.getBounds().isValid()) {
+      const center = tempL.getBounds().getCenter();
+      
+      for (let i = -range; i <= range; i++) {
+        for (let j = -range; j <= range; j++) {
+          const pLat = (center.lat + i * step).toFixed(3);
+          const pLon = (center.lng + j * step).toFixed(3);
+          pointSet.add(`${pLat},${pLon}`);
         }
       }
-    });
-
-    if (pointSet.size > 0 && pointSet.size <= MAX_SAFE_POINTS) {
-      // Risoluzione perfetta trovata
-      finalPoints = Array.from(pointSet).map(str => {
-        const parts = str.split(',');
-        return { lat: parts[0], lon: parts[1] };
-      });
-      break; 
-    } else {
-      // Punti eccedenti: allarga la maglia per forzare fusioni di celle
-      gridSize += 0.1;
     }
-  }
+  });
 
-  // Fallback di sicurezza estrema nel caso l'utente abbia sentieri in 3 continenti diversi
-  if (finalPoints.length === 0) {
-    // Esiste almeno un set ma era > MAX_SAFE_POINTS al limite del ciclo
-    finalPoints = Array.from(pointSet || new Set()).slice(0, MAX_SAFE_POINTS).map(str => {
-      const parts = str.split(',');
-      return { lat: parts[0], lon: parts[1] };
-    });
+  let finalPoints = Array.from(pointSet).map(str => {
+    const parts = str.split(',');
+    return { lat: parts[0], lon: parts[1] };
+  });
+
+  if (finalPoints.length > 45) {
+    const ratio = Math.ceil(finalPoints.length / 45);
+    finalPoints = finalPoints.filter((_, index) => index % ratio === 0);
   }
 
   if (finalPoints.length === 0) return;
@@ -365,7 +345,7 @@ async function load3DaysWeatherGrid() {
     heatmap3DaysCache = Array.isArray(data) ? data : [data];
     renderWeatherGridFromCache();
   } catch (err) {
-    console.error("Errore caricamento griglia adattiva", err);
+    console.error("Errore caricamento griglia continua", err);
   }
 }
 
