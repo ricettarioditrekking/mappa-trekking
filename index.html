@@ -24,11 +24,27 @@ html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: Aria
 #stats { font-style: italic; color: #777; font-size: 0.85rem; margin-top: 25px; }
 #map { flex: 1; height: 100%; }
 .leaflet-interactive { filter: drop-shadow(0px 0px 3px currentColor); transition: stroke-width 0.15s ease; }
+
+/* POPUP POSIZIONATO A DESTRA CON FRECCIA LATERALE */
 .popup-right { margin-bottom: 0 !important; }
 .popup-right .leaflet-popup-tip-container { display: none !important; }
 .popup-right .leaflet-popup-content-wrapper { position: relative; border-radius: 12px; padding: 6px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
-.popup-right .leaflet-popup-content-wrapper::before { content: ""; position: absolute; left: -6px; bottom: 26px; width: 14px; height: 14px; background: #ffffff; transform: rotate(45deg); z-index: -1; box-shadow: -2px 2px 3px rgba(0,0,0,0.15); border-radius: 2px; }
-.popup-right .leaflet-popup-content { margin: 16px 22px 16px 16px !important; padding-right: 14px !important; max-height: 320px !important; overflow-y: auto !important; line-height: 1.5; color: #333; }
+.popup-right .leaflet-popup-content-wrapper::before { 
+  content: ""; 
+  position: absolute; 
+  left: -6px; 
+  top: 24px; 
+  width: 14px; 
+  height: 14px; 
+  background: #ffffff; 
+  transform: rotate(45deg); 
+  z-index: 1; 
+  box-shadow: -2px 2px 3px rgba(0,0,0,0.15); 
+  border-radius: 2px; 
+}
+.popup-right .leaflet-popup-content { margin: 12px !important; line-height: 1.5; color: #333; }
+.popup-right img { width: 100%; max-height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; display: block; }
+
 @media (max-width: 768px) {
   body { flex-direction: column; }
   #sidebar { width: 100%; height: auto; max-height: 40vh; }
@@ -110,7 +126,7 @@ html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: Aria
     <div id="risultato-meteo" style="margin-top: 8px; margin-bottom: 15px; font-size: 0.85rem;">Passa col mouse su un percorso per i dettagli</div>
 
     <div id="regione-meteo-controls" style="background: #edf2f7; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e0;">
-      <label style="color: #2d3748; font-size: 0.85rem; margin-bottom: 4px;"><strong>Heatmap Precipitazioni:</strong></label>
+      <label style="color: #2d3748; font-size: 0.85rem; margin-bottom: 4px;"><strong>Mappa Precipitazioni Continua:</strong></label>
       <div style="font-size: 0.85rem; color: #4a5568; margin-bottom: 4px;">Ora selezionata: <span id="time-display" style="font-weight: bold;">12:00</span></div>
       <input type="range" id="time-slider" min="0" max="7" value="4" step="1" style="width: 100%; margin: 5px 0;" oninput="changeForecastStep(this.value)">
       <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #718096;">
@@ -124,8 +140,10 @@ html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: Aria
 
 <div id="map"></div>
 
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<!-- Turf.js per Interpolazione Spaziale IDW Professionale -->
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 <script>
 const oggi = new Date();
@@ -147,21 +165,7 @@ let hoverMeteoTimeout = null;
 const intervals = [0, 3, 6, 9, 12, 15, 18, 21];
 let currentStepIndex = 4;
 let heatmap3DaysCache = null;
-
-// RAGGIO E SFUMATURA REGOLATI PER I CLUSTER MAGNETICI
-let heatLayer = L.heatLayer([], {
-  radius: 45, 
-  blur: 30,    
-  maxZoom: 11,
-  max: 100,
-  minOpacity: 0.15,
-  gradient: { 
-    0.15: '#00bfff', 
-    0.4: '#0000ff', 
-    0.7: '#ffaa00', 
-    1.0: '#ff0000'  
-  }
-});
+let weatherGridLayer = null; // Layer vettoriale interpolato
 
 const map = L.map('map').setView([46.4983, 11.3548], 10);
 const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
@@ -169,10 +173,13 @@ const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
   attribution: 'Map data: © OpenStreetMap contributors | Map style: © OpenTopoMap'
 }).addTo(map);
 
-L.control.layers({ "OpenTopoMap": topoLayer }, { "Heatmap Precipitazioni": heatLayer }, { collapsed: false }).addTo(map);
+// Inizializza layer vuoto per la griglia meteo
+weatherGridLayer = L.geoJSON(null).addTo(map);
+
+L.control.layers({ "OpenTopoMap": topoLayer }, { "Copertura Precipitazioni": weatherGridLayer }, { collapsed: false }).addTo(map);
 
 map.on('overlayadd', function(e) {
-  if (e.layer === heatLayer) { 
+  if (e.layer === weatherGridLayer) { 
     load3DaysWeatherGrid(); 
   }
 });
@@ -185,6 +192,16 @@ function getNeonColor(difficolta) {
     case 'Molto Difficile': return '#FF007F';
     default: return '#00FF66';
   }
+}
+
+// Scala di colore continua per l'interpolazione
+function getRainColor(val) {
+  if (val < 15) return 'transparent'; // Trasparente se non piove
+  if (val < 35) return '#00bfff';      // Azzurro chiaro (pioggia debole)
+  if (val < 55) return '#0055ff';      // Blu intenso (pioggia moderata)
+  if (val < 75) return '#ffaa00';      // Arancione (pioggia forte)
+  if (val < 90) return '#ff2200';      // Rosso (molto forte)
+  return '#cc00cc';                    // Viola (estrema/temporale)
 }
 
 function getMeteoEmoji(weatherCode) {
@@ -212,12 +229,25 @@ function getMeteoSeverity(emoji) {
 
 function onEachFeature(feature, layer) {
   const p = feature.properties;
-  layer.bindPopup(`<strong>${p.name}</strong><br>Distanza: ${p.km} km<br>Difficoltà: ${p.difficolta}`, { className: 'popup-right', minWidth: 285 });
+  
+  const imgUrl = p.image || p.foto || p.img || p.thumbnail || p.picture || p.image_url;
+  const imgHtml = imgUrl ? `<img src="${imgUrl}" alt="${p.name}">` : '';
+
+  layer.bindPopup(`
+    ${imgHtml}
+    <strong>${p.name}</strong><br>
+    Distanza: ${p.km} km<br>
+    Difficoltà: ${p.difficolta}
+  `, { 
+    className: 'popup-right', 
+    minWidth: 260,
+    offset: L.point(150, -10) 
+  });
 
   layer.on('mouseover', function(e) {
     selectedLayerForMeteo = layer;
     layer.setStyle({ weight: 8, opacity: 1 });
-    this.openPopup();
+    this.openPopup(e.latlng);
     if (document.getElementById('chk-autoupdate-meteo').checked) {
       clearTimeout(hoverMeteoTimeout);
       hoverMeteoTimeout = setTimeout(() => { caricaMeteoTraccia(); }, 400);
@@ -285,7 +315,7 @@ async function caricaMeteoTraccia() {
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${center.lat.toFixed(4)}&longitude=${center.lng.toFixed(4)}&forecast_days=3&hourly=temperature_2m,precipitation_probability,weathercode&timezone=auto`;
     const response = await fetch(url);
-    if (!response.ok) throw new Error("Rate");
+    if (!response.ok) throw new Error("Rate Limit");
     const data = await response.json();
     trackMeteoCache.set(cacheKey, data);
     renderMeteoResult(data, selectedLayerForMeteo.feature.properties.name, dataInput, oraInput);
@@ -303,42 +333,33 @@ async function load3DaysWeatherGrid() {
   const activeFeatures = geoJsonLayer ? geoJsonLayer.toGeoJSON().features : (allData ? allData.features : []);
   if (activeFeatures.length === 0) return;
 
-  let pointSet = new Set();
-  const step = 0.025; // Matrice regolare di circa 2.5 km per punto
-
-  // Generazione della cornice di punti (cluster magnetico) intorno ad ogni tracciato
+  // Estraiamo fino a 35 punti campione distribuiti regolarmente sui percorsi
+  let rawPoints = [];
   activeFeatures.forEach(feature => {
     const tempL = L.geoJSON(feature);
     if (tempL.getBounds().isValid()) {
       const b = tempL.getBounds();
-      const minLat = b.getSouth() - 0.03;
-      const maxLat = b.getNorth() + 0.03;
-      const minLng = b.getWest() - 0.03;
-      const maxLng = b.getEast() + 0.03;
-
-      for (let lat = minLat; lat <= maxLat; lat += step) {
-        for (let lng = minLng; lng <= maxLng; lng += step) {
-          pointSet.add(`${lat.toFixed(3)},${lng.toFixed(3)}`);
-        }
-      }
+      rawPoints.push([b.getSouth(), b.getWest()]);
+      rawPoints.push([b.getNorth(), b.getEast()]);
+      rawPoints.push([b.getCenter().lat, b.getCenter().lng]);
+      rawPoints.push([b.getSouth(), b.getEast()]);
+      rawPoints.push([b.getNorth(), b.getWest()]);
     }
   });
 
-  let finalPoints = Array.from(pointSet).map(str => {
-    const parts = str.split(',');
-    return { lat: parts[0], lon: parts[1] };
+  // Filtriamo i punti troppo vicini per stare comodamente sotto il limite API (35-40 max)
+  let sampledPoints = [];
+  rawPoints.forEach(pt => {
+    const ptTurf = turf.point([pt[1], pt[0]]);
+    const isClose = sampledPoints.some(s => turf.distance(turf.point([s[1], s[0]]), ptTurf, {units: 'kilometers'}) < 4);
+    if (!isClose) sampledPoints.push(pt);
   });
+  sampledPoints = sampledPoints.slice(0, 38);
 
-  // Mantenimento sotto la soglia massima per Open-Meteo per evitare il blocco API
-  if (finalPoints.length > 48) {
-    const ratio = Math.ceil(finalPoints.length / 48);
-    finalPoints = finalPoints.filter((_, index) => index % ratio === 0);
-  }
+  if (sampledPoints.length === 0) return;
 
-  if (finalPoints.length === 0) return;
-
-  const latitudeQueries = finalPoints.map(p => p.lat);
-  const longitudeQueries = finalPoints.map(p => p.lon);
+  const latitudeQueries = sampledPoints.map(p => p[0].toFixed(4));
+  const longitudeQueries = sampledPoints.map(p => p[1].toFixed(4));
 
   const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitudeQueries.join(',')}&longitude=${longitudeQueries.join(',')}&forecast_days=3&hourly=precipitation_probability&timezone=auto`;
 
@@ -349,27 +370,59 @@ async function load3DaysWeatherGrid() {
     heatmap3DaysCache = Array.isArray(data) ? data : [data];
     renderWeatherGridFromCache();
   } catch (err) {
-    console.error("Errore caricamento griglia continua", err);
+    console.error("Errore recupero dati meteo per interpolazione", err);
   }
 }
 
 function renderWeatherGridFromCache() {
-  if (!heatmap3DaysCache || !map.hasLayer(heatLayer)) return;
+  if (!heatmap3DaysCache || !map.hasLayer(weatherGridLayer)) return;
 
   const selectedDate = document.getElementById('data-partenza').value;
   const targetHour = intervals[currentStepIndex];
   const searchTime = `${selectedDate}T${String(targetHour).padStart(2, '0')}:00`;
 
-  let heatPoints = [];
+  let turfPoints = [];
   heatmap3DaysCache.forEach(location => {
     const timeIndex = location.hourly.time.indexOf(searchTime);
     if (timeIndex !== -1) {
       const rainProb = location.hourly.precipitation_probability[timeIndex] || 0;
-      if (rainProb > 0) heatPoints.push([location.latitude, location.longitude, rainProb]);
+      turfPoints.push(turf.point([location.longitude, location.latitude], { rain: rainProb }));
     }
   });
 
-  heatLayer.setLatLngs(heatPoints);
+  if (turfPoints.length < 2) {
+    weatherGridLayer.clearLayers();
+    return;
+  }
+
+  const pointCollection = turf.featureCollection(turfPoints);
+
+  try {
+    // Eseguiamo l'interpolazione spaziale IDW su tessere da 1.8km
+    const interpolatedGrid = turf.interpolate(pointCollection, 1.8, {
+      gridType: 'square',
+      property: 'rain',
+      units: 'kilometers',
+      weight: 2
+    });
+
+    weatherGridLayer.clearLayers();
+
+    // Applichiamo la griglia vettoriale senza bordi per creare la superficie sfumata continua
+    weatherGridLayer.addData(interpolatedGrid);
+    weatherGridLayer.setStyle(function(feature) {
+      const rain = feature.properties.rain || 0;
+      return {
+        fillColor: getRainColor(rain),
+        fillOpacity: rain >= 15 ? 0.55 : 0,
+        stroke: false, // Nessun bordo tra celle = Mappa fluida senza interruzioni
+        interactive: false
+      };
+    });
+
+  } catch (e) {
+    console.error("Errore durante il calcolo dell'interpolazione Turf", e);
+  }
 }
 
 function changeForecastStep(value) {
@@ -397,6 +450,10 @@ function applyFilters() {
   }).addTo(map);
   
   document.getElementById('stats').textContent = `Mostrati: ${filteredFeatures.length} di ${allData.features.length} percorsi`;
+  
+  // Ricarica la griglia meteo adattandola ai filtri attivi
+  heatmap3DaysCache = null;
+  if (map.hasLayer(weatherGridLayer)) load3DaysWeatherGrid();
 }
 
 document.querySelectorAll('select, input[type="range"], input[type="checkbox"]').forEach(el => {
@@ -414,7 +471,8 @@ document.getElementById('data-partenza').addEventListener('change', () => {
 fetch('percorsi.geojson')
   .then(res => res.json())
   .then(data => {
-    allData = data; applyFilters();
+    allData = data; 
+    applyFilters();
     if (geoJsonLayer) map.fitBounds(geoJsonLayer.getBounds(), { padding: [30, 30] });
   });
 </script>
