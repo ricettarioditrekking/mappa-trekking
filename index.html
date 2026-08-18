@@ -128,15 +128,13 @@
       display: none !important;
     }
 
-    /* Base del riquadro bianco con margine interno di respiro */
     .popup-right .leaflet-popup-content-wrapper {
       position: relative;
       border-radius: 12px;
-      padding: 6px; /* Dà respiro attorno a tutto il popup */
+      padding: 6px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.25);
     }
 
-    /* Chevron saldato e allineato ai nuovi margini */
     .popup-right .leaflet-popup-content-wrapper::before {
       content: '';
       position: absolute;
@@ -151,17 +149,15 @@
       border-radius: 2px;
     }
 
-    /* Spaziature generose del contenuto */
     .popup-right .leaflet-popup-content {
-      margin: 16px 22px 16px 16px !important; /* Margine destro più ampio per allontanarsi dalla scrollbar */
-      padding-right: 14px !important; /* Spazio protettivo tra il testo e la scrollbar */
+      margin: 16px 22px 16px 16px !important;
+      padding-right: 14px !important;
       max-height: 320px !important;
       overflow-y: auto !important;
       line-height: 1.5;
       color: #333;
     }
 
-    /* --- Scrollbar Custom Elegante --- */
     .popup-right .leaflet-popup-content::-webkit-scrollbar {
       width: 6px;
     }
@@ -177,7 +173,6 @@
       background: #aaa; 
     }
 
-    /* --- Nuova "X" di chiusura: Bottone Premium Flottante --- */
     .popup-right .leaflet-popup-close-button {
       top: 10px !important;
       right: 10px !important;
@@ -201,7 +196,6 @@
       transform: scale(1.05);
     }
 
-    /* Custom style per il menu a tendina nei popup */
     details {
       margin-top: 12px;
       background: #f7f7f7;
@@ -319,6 +313,10 @@
     <div class="filter-group" style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #ddd;">
       <label style="margin-bottom: 10px; color: #2c3e50;">Pianificatore Meteo:</label>
       
+      <div style="margin-bottom: 8px;">
+        <label><input type="checkbox" id="chk-autoupdate-meteo" checked> Autoupdate meteo?</label>
+      </div>
+
       <label for="data-partenza" style="font-size: 0.85rem; font-weight: normal; margin-bottom: 2px;">Data escursione:</label>
       <input type="date" id="data-partenza" style="width: 100%; margin-bottom: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
       
@@ -343,13 +341,13 @@
   <script>
     let allData = null;
     let geoJsonLayer = null;
-    let selectedLayerForMeteo = null; // Memorizza l'ultimo percorso cliccato/selezionato
+    let selectedLayerForMeteo = null;
 
     const map = L.map('map').setView([46.4983, 11.3548], 10);
 
     L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
       maxZoom: 17,
-      attribution: 'Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)'
+      attribution: 'Map data: © OpenStreetMap contributors, SRTS | Map style: © OpenTopoMap (CC-BY-SA)'
     }).addTo(map);
 
     function getNeonColor(difficolta) {
@@ -386,6 +384,9 @@
         </details>
       `;
 
+      // Contenitore vuoto dedicato al meteo all'interno del popup
+      const meteoPopupHtml = `<div id="popup-meteo-content-${p.file_location ? p.file_location.replace(/[^a-zA-Z0-9]/g, '_') : Math.random()}" style="margin-top: 10px; font-size: 0.85rem;"></div>`;
+
       const popupContent = 
         '<div style="font-size: 1.05rem; font-weight: bold; margin-bottom: 6px; padding-right: 25px; line-height: 1.3;">' + p.name + '</div>' +
         linkHtml + imgHtml +
@@ -393,6 +394,7 @@
         'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
         'Tempo totale: ' + tempoStr + '<br>' +
         'Difficoltà: ' + p.difficolta + sforzoStr +
+        meteoPopupHtml +
         detailsHtml;
 
       layer.bindPopup(popupContent, {
@@ -404,9 +406,14 @@
       });
 
       layer.on('popupopen', function(e) {
-        // Memorizza il layer attivo per consentire al pulsante meteo laterale di sapere quale traccia calcolare
         selectedLayerForMeteo = layer;
         
+        // Se l'autoupdate è attivo, calcola il meteo automaticamente all'apertura del popup
+        const autoUpdateEnabled = document.getElementById('chk-autoupdate-meteo').checked;
+        if (autoUpdateEnabled) {
+          caricaMeteoTraccia();
+        }
+
         const popup = e.popup;
         const detailsElem = popup.getElement().querySelector('details');
         if (detailsElem) {
@@ -425,12 +432,24 @@
       });
     }
 
-    // Funzione asincrona per il recupero del meteo tramite Open-Meteo API
+    // Funzione unificata per il recupero del meteo (aggiorna sia sidebar che eventuale popup attivo)
     async function caricaMeteoTraccia() {
       const containerRisultato = document.getElementById('risultato-meteo');
+      
+      // Trova anche il contenitore del meteo all'interno del popup aperto (se presente)
+      let popupMeteoContainer = null;
+      if (selectedLayerForMeteo && selectedLayerForMeteo.isPopupOpen()) {
+        const popupEl = selectedLayerForMeteo.getPopup().getElement();
+        if (popupEl) {
+          // Trova il div dinamico del meteo nel popup
+          popupMeteoContainer = popupEl.querySelector("[id^='popup-meteo-content-']");
+        }
+      }
 
       if (!selectedLayerForMeteo) {
-        containerRisultato.innerHTML = "<span style='color: #c0392b;'>Seleziona prima un percorso sulla mappa!</span>";
+        const msg = "<span style='color: #c0392b;'>Seleziona prima un percorso sulla mappa!</span>";
+        containerRisultato.innerHTML = msg;
+        if (popupMeteoContainer) popupMeteoContainer.innerHTML = msg;
         return;
       }
 
@@ -438,20 +457,22 @@
       const oraInput = document.getElementById('ora-partenza').value;
 
       if (!dataInput) {
-        containerRisultato.innerHTML = "<span style='color: #c0392b;'>Seleziona una data per l'escursione.</span>";
+        const msg = "<span style='color: #c0392b;'>Seleziona una data per l'escursione.</span>";
+        containerRisultato.innerHTML = msg;
+        if (popupMeteoContainer) popupMeteoContainer.innerHTML = msg;
         return;
       }
 
-      // Estrae le coordinate del punto di partenza della geometria GeoJSON [lon, lat]
       const coords = selectedLayerForMeteo.feature.geometry.coordinates;
       const lon = coords[0][0];
       const lat = coords[0][1];
 
-      // Stima approssimativa della durata in ore basata sulla proprietà km (circa 3.5 km/h) o fallback a 4 ore
       const kmPercorso = selectedLayerForMeteo.feature.properties.km || 10;
       const durataOre = Math.max(2, Math.round(kmPercorso / 3.0));
 
-      containerRisultato.innerHTML = "Caricamento meteo in corso...";
+      const loadingMsg = "Caricamento meteo in corso...";
+      containerRisultato.innerHTML = loadingMsg;
+      if (popupMeteoContainer) popupMeteoContainer.innerHTML = loadingMsg;
 
       try {
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability&timezone=auto`;
@@ -459,39 +480,59 @@
         const response = await fetch(url);
         const data = await response.json();
 
-        // Cerca l'indice corrispondente all'ora di partenza scelta
         const oraFormattata = oraInput.split(':')[0].padStart(2, '0');
-        const targetIsoString = `${dataInput}T${oraFormattata}:00`;
-        const indexOra = data.hourly.time.findIndex(t => t.startsWith(`${dataInput}T${oraFormattata}` ));
+        const indexOra = data.hourly.time.findIndex(t => t.startsWith(`${dataInput}T${oraFormattata}`));
 
         if (indexOra !== -1) {
           const tempPartenza = data.hourly.temperature_2m[indexOra];
           const pioggiaPartenza = data.hourly.precipitation_probability[indexOra];
           
-          // Stima all'arrivo (partenza + durata calcolata)
           const indexArrivo = Math.min(indexOra + durataOre, data.hourly.time.length - 1);
           const tempArrivo = data.hourly.temperature_2m[indexArrivo];
           const pioggiaArrivo = data.hourly.precipitation_probability[indexArrivo];
 
-          containerRisultato.innerHTML = `
+          const htmlRisultato = `
             <div style="background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
-              <strong>${selectedLayerForMeteo.feature.properties.name}</strong><br>
-              • <strong>Partenza (${oraInput}):</strong> ${tempPartenza}°C, Pioggia: ${pioggiaPartenza}%<br>
+              <strong>Meteo (${dataInput} ${oraInput}):</strong><br>
+              • <strong>Partenza:</strong> ${tempPartenza}°C, Pioggia: ${pioggiaPartenza}%<br>
               • <strong>Arrivo est. (+${durataOre}h):</strong> ${tempArrivo}°C, Pioggia: ${pioggiaArrivo}%
             </div>
           `;
+
+          containerRisultato.innerHTML = htmlRisultato;
+          if (popupMeteoContainer) {
+            popupMeteoContainer.innerHTML = htmlRisultato;
+            // Aggiorna le dimensioni del popup leaflet in caso di cambio contenuto
+            selectedLayerForMeteo.getPopup().update();
+          }
         } else {
-          containerRisultato.innerHTML = "<span style='color: #d35400;'>Orario non disponibile nelle previsioni a lungo termine.</span>";
+          const errorMsg = "<span style='color: #d35400;'>Orario non disponibile nelle previsioni.</span>";
+          containerRisultato.innerHTML = errorMsg;
+          if (popupMeteoContainer) popupMeteoContainer.innerHTML = errorMsg;
         }
 
       } catch (error) {
         console.error("Errore nel recupero meteo:", error);
-        containerRisultato.innerHTML = "<span style='color: #c0392b;'>Errore di connessione al servizio meteo.</span>";
+        const errorMsg = "<span style='color: #c0392b;'>Errore di connessione al servizio meteo.</span>";
+        containerRisultato.innerHTML = errorMsg;
+        if (popupMeteoContainer) popupMeteoContainer.innerHTML = errorMsg;
       }
     }
 
-    // Associa l'evento al pulsante meteo nella sidebar
+    // Listener sul pulsante manuale
     document.getElementById('btn-meteo').addEventListener('click', caricaMeteoTraccia);
+
+    // Se l'utente cambia data o ora e c'è un percorso selezionato con autoupdate attivo
+    document.getElementById('data-partenza').addEventListener('change', () => {
+      if (document.getElementById('chk-autoupdate-meteo').checked && selectedLayerForMeteo) {
+        caricaMeteoTraccia();
+      }
+    });
+    document.getElementById('ora-partenza').addEventListener('change', () => {
+      if (document.getElementById('chk-autoupdate-meteo').checked && selectedLayerForMeteo) {
+        caricaMeteoTraccia();
+      }
+    });
 
     function applyFilters() {
       if (!allData) return;
