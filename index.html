@@ -497,28 +497,29 @@
         const data = await response.json();
 
         const oraFormattata = oraInput.split(':')[0].padStart(2, '0');
-        const indexOra = data.hourly.time.findIndex(t => t.startsWith(`${dataInput}T${oraFormattata}`));
+        const indexInizio = data.hourly.time.findIndex(t => t.startsWith(`${dataInput}T${oraFormattata}`));
 
-        if (indexOra !== -1) {
-          const tempPartenza = data.hourly.temperature_2m[indexOra];
-          const pioggiaPartenza = data.hourly.precipitation_probability[indexOra];
-          
-          const indexArrivo = Math.min(indexOra + durataOre, data.hourly.time.length - 1);
-          const tempArrivo = data.hourly.temperature_2m[indexArrivo];
-          const pioggiaArrivo = data.hourly.precipitation_probability[indexArrivo];
+        if (indexInizio !== -1) {
+          let orarioDettagliHtml = `<div style="background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd; max-height: 180px; overflow-y: auto;">`;
+          orarioDettagliHtml += `<strong style="color: #2c3e50; font-size: 0.9rem; display: block; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 3px;">📍 ${nomePercorso}</strong>`;
+          orarioDettagliHtml += `<strong>Previsioni ora per ora:</strong><br>`;
 
-          const htmlRisultato = `
-            <div style="background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
-              <strong style="color: #2c3e50; font-size: 0.9rem; display: block; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 3px;">📍 ${nomePercorso}</strong>
-              <strong>Meteo (${dataInput} ${oraInput}):</strong><br>
-              • <strong>Partenza:</strong> ${tempPartenza}°C, Pioggia: ${pioggiaPartenza}%<br>
-              • <strong>Arrivo est. (+${durataOre}h):</strong> ${tempArrivo}°C, Pioggia: ${pioggiaArrivo}%
-            </div>
-          `;
+          for (let i = 0; i <= durataOre; i++) {
+            const currentIndex = indexInizio + i;
+            if (currentIndex < data.hourly.time.length) {
+              const oraSlot = data.hourly.time[currentIndex].split('T')[1];
+              const tempSlot = data.hourly.temperature_2m[currentIndex];
+              const pioggiaSlot = data.hourly.precipitation_probability[currentIndex];
+              
+              let etichettaTempo = (i === 0) ? "Partenza" : (i === durataOre ? "Arrivo" : `+${i}h`);
+              orarioDettagliHtml += `• <strong>${oraSlot}</strong> (${etichettaTempo}): ${tempSlot}°C, 💧 ${pioggiaSlot}%<br>`;
+            }
+          }
+          orarioDettagliHtml += `</div>`;
 
-          containerRisultato.innerHTML = htmlRisultato;
+          containerRisultato.innerHTML = orarioDettagliHtml;
           if (popupMeteoContainer) {
-            popupMeteoContainer.innerHTML = htmlRisultato;
+            popupMeteoContainer.innerHTML = orarioDettagliHtml;
             selectedLayerForMeteo.getPopup().update();
           }
         } else {
