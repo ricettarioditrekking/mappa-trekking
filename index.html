@@ -1,363 +1,178 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mappa Percorsi GPX</title>
+import os
+import glob
+import json
+import math
+import xml.etree.ElementTree as ET
+from datetime import datetime
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(dlon / 2) ** 2
+    )
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
 
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      font-family: Arial, sans-serif;
-      display: flex;
-    }
 
-    /* Left Sidebar Styling */
-    #sidebar {
-      width: 320px;
-      height: 100%;
-      background: #f8f9fa;
-      border-right: 1px solid #ddd;
-      padding: 20px;
-      overflow-y: auto;
-      z-index: 1000;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-    }
+def calcola_dislivelli_wikiloc(elevations, window_size=9):
+    clean_ele = [float(e) for e in elevations if e is not None]
+    if len(clean_ele) < window_size:
+        return 0, 0
 
-    #sidebar h2 {
-      margin-top: 0;
-      font-size: 1.2rem;
-      margin-bottom: 20px;
-    }
+    smoothed_ele = []
+    half_window = window_size // 2
+    n = len(clean_ele)
 
-    .filter-group {
-      margin-bottom: 18px;
-    }
+    for i in range(n):
+        start = max(0, i - half_window)
+        end = min(n, i + half_window + 1)
+        smoothed_ele.append(sum(clean_ele[start:end]) / (end - start))
 
-    .filter-group label {
-      display: block;
-      font-weight: bold;
-      font-size: 0.9rem;
-      margin-bottom: 6px;
-    }
+    gain, loss = 0.0, 0.0
+    for i in range(1, len(smoothed_ele)):
+        diff = smoothed_ele[i] - smoothed_ele[i - 1]
+        if diff > 0:
+            gain += diff
+        elif diff < 0:
+            loss += abs(diff)
 
-    .filter-group select {
-      width: 100%;
-      padding: 6px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
+    return int(round(gain)), int(round(loss))
 
-    .range-val {
-      float: right;
-      font-size: 0.85rem;
-      color: #555;
-      font-weight: normal;
-    }
 
-    .range-sliders {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-top: 4px;
-    }
+def processa_gpx(file_path):
+    tree = ET.parse(file_path)
+    root = tree.getroot()
 
-    .slider-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    coords = []
+    elevations = []
+    timestamps = []
+    total_dist_km = 0.0
+    last_lat, last_lon = None, None
 
-    .slider-row span {
-      font-size: 0.75rem;
-      color: #666;
-      width: 30px;
-    }
+    # Estrazione punti
+    for trkpt in root.findall('.//{*}trkpt'):
+        lat = float(trkpt.attrib['lat'])
+        lon = float(trkpt.attrib['lon'])
+        coords.append([lon, lat])
 
-    .slider-row input[type="range"] {
-      flex: 1;
-    }
+        if last_lat is not None and last_lon is not None:
+            total_dist_km += haversine(last_lat, last_lon, lat, lon)
+        last_lat, last_lon = lat, lon
 
-    #stats {
-      font-style: italic;
-      color: #777;
-      font-size: 0.85rem;
-      margin-top: 25px;
-    }
+        ele_elem = trkpt.find('{*}ele')
+        if ele_elem is not None and ele_elem.text:
+            try:
+                elevations.append(float(ele_elem.text))
+            except ValueError:
+                pass
 
-    /* Map Container */
-    #map {
-      flex: 1;
-      height: 100%;
-    }
+        time_elem = trkpt.find('{*}time')
+        if time_elem is not None and time_elem.text:
+            try:
+                ts = time_elem.text.strip().replace('Z', '+00:00')
+                timestamps.append(datetime.fromisoformat(ts))
+            except ValueError:
+                pass
 
-    /* Neon glow effect on tracks */
-    .leaflet-interactive {
-      filter: drop-shadow(0px 0px 3px currentColor);
-    }
+    km = round(total_dist_km, 1)
+    dislivello_pos, dislivello_neg = calcola_dislivelli_wikiloc(elevations, window_size=9)
 
-    @media (max-width: 768px) {
-      body {
-        flex-direction: column;
-      }
-      #sidebar {
-        width: 100%;
-        height: auto;
-        max-height: 40vh;
-      }
-      #map {
-        height: 60vh;
-      }
-    }
-  </style>
-</head>
-<body>
+    # Tempo stimato o effettivo
+    if len(timestamps) >= 2:
+        total_minutes = (timestamps[-1] - timestamps[0]).total_seconds() / 60
+        hours = int(total_minutes // 60)
+        minutes = int(total_minutes % 60)
+        tempo_testo = f"{hours}h {minutes:02d}m"
+        durata_cat = "Mezza Giornata" if total_minutes <= 240 else "Giornata Intera"
+    else:
+        est_hours = round((km / 4.0) + (dislivello_pos / 400.0), 1)
+        tempo_testo = f"~{est_hours} ore"
+        durata_cat = "Mezza Giornata" if est_hours <= 4.0 else "Giornata Intera"
 
-  <!-- Sidebar Filters -->
-  <div id="sidebar">
-    <h2>Filtri Percorsi</h2>
+    effort_score = round(km + (dislivello_pos / 100.0), 1)
 
-    <!-- Difficoltà -->
-    <div class="filter-group">
-      <label for="filter-difficolta">Difficoltà:</label>
-      <select id="filter-difficolta">
-        <option value="Tutte">Tutte</option>
-        <option value="Facile">Facile</option>
-        <option value="Media">Media</option>
-        <option value="Difficile">Difficile</option>
-        <option value="Molto Difficile">Molto Difficile</option>
-      </select>
-    </div>
+    if effort_score < 12:
+        difficolta = "Facile"
+    elif effort_score <= 22:
+        difficolta = "Media"
+    elif effort_score <= 32:
+        difficolta = "Difficile"
+    else:
+        difficolta = "Molto Difficile"
 
-    <!-- Distanza (Double Slider) -->
-    <div class="filter-group">
-      <label>Distanza (Km): <span id="val-dist" class="range-val">0 - 50 km</span></label>
-      <div class="range-sliders">
-        <div class="slider-row">
-          <span>Min:</span>
-          <input type="range" id="filter-dist-min" min="0" max="50" value="0" step="1">
-        </div>
-        <div class="slider-row">
-          <span>Max:</span>
-          <input type="range" id="filter-dist-max" min="0" max="50" value="50" step="1">
-        </div>
-      </div>
-    </div>
+    # Nome traccia
+    name_elem = root.find('.//{*}trk/{*}name')
+    if name_elem is not None and name_elem.text:
+        track_name = name_elem.text.strip()
+    else:
+        base = os.path.basename(file_path)
+        track_name = os.path.splitext(base)[0].replace('_', ' ').replace('-', ' ').title()
 
-    <!-- Dislivello + (Double Slider) -->
-    <div class="filter-group">
-      <label>Dislivello + (m): <span id="val-dis-pos" class="range-val">0 - 2500 m</span></label>
-      <div class="range-sliders">
-        <div class="slider-row">
-          <span>Min:</span>
-          <input type="range" id="filter-dis-pos-min" min="0" max="2500" value="0" step="50">
-        </div>
-        <div class="slider-row">
-          <span>Max:</span>
-          <input type="range" id="filter-dis-pos-max" min="0" max="2500" value="2500" step="50">
-        </div>
-      </div>
-    </div>
+    # Link Wikiloc
+    wikiloc_link = None
+    link_elem = root.find('.//{*}link')
+    if link_elem is not None and 'href' in link_elem.attrib:
+        wikiloc_link = link_elem.attrib['href']
 
-    <!-- Dislivello - (Double Slider) -->
-    <div class="filter-group">
-      <label>Dislivello - (m): <span id="val-dis-neg" class="range-val">0 - 2500 m</span></label>
-      <div class="range-sliders">
-        <div class="slider-row">
-          <span>Min:</span>
-          <input type="range" id="filter-dis-neg-min" min="0" max="2500" value="0" step="50">
-        </div>
-        <div class="slider-row">
-          <span>Max:</span>
-          <input type="range" id="filter-dis-neg-max" min="0" max="2500" value="2500" step="50">
-        </div>
-      </div>
-    </div>
+    # Controllo immagine associata
+    base_path = os.path.splitext(file_path)[0]
+    image_url = None
+    for ext in ['.jpg', '.jpeg', '.png', '.JPG', '.JPEG', '.PNG']:
+        candidate = base_path + ext
+        if os.path.exists(candidate):
+            image_url = candidate.replace('\\', '/')
+            break
 
-    <!-- Categoria Durata -->
-    <div class="filter-group">
-      <label for="filter-durata">Categoria Durata:</label>
-      <select id="filter-durata">
-        <option value="Tutte">Tutte</option>
-        <option value="Mezza Giornata">Mezza Giornata</option>
-        <option value="Giornata Intera">Giornata Intera</option>
-      </select>
-    </div>
+    # Riconoscimento dello STATO (fatta / non_fatta) in base al percorso della cartella
+    normalized_path = file_path.replace('\\', '/').lower()
+    if '/fatte/' in normalized_path or normalized_path.startswith('fatte/'):
+        stato = "fatta"
+    elif '/non_fatte/' in normalized_path or normalized_path.startswith('non_fatte/'):
+        stato = "non_fatta"
+    else:
+        stato = "non_fatta"  # Valore di default se si trova nella radice di tracce/
 
-    <div id="stats">Mostrati: 0 di 0 percorsi</div>
-  </div>
-
-  <!-- Map Container -->
-  <div id="map"></div>
-
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <script>
-    let allData = null;
-    let geoJsonLayer = null;
-
-    // 1. Initialize Map
-    const map = L.map('map').setView([46.4983, 11.3548], 10);
-
-    // 2. OpenTopoMap Topographic Tile Layer
-    L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      maxZoom: 17,
-      attribution: 'Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)'
-    }).addTo(map);
-
-    // 3. Neon Color Mapping
-    function getNeonColor(difficolta) {
-      switch (difficolta) {
-        case 'Facile':
-          return '#00FF66'; // Electric Neon Green
-        case 'Media':
-          return '#00E5FF'; // Bright Cyan
-        case 'Difficile':
-          return '#FF5F00'; // Vivid Neon Orange
-        case 'Molto Difficile':
-          return '#FF007F'; // Hot Pink / Magenta
-        default:
-          return '#00FF66';
-      }
-    }
-
-    // 4. Feature Popup and Interactions
-    function onEachFeature(feature, layer) {
-      const p = feature.properties;
-      
-      const dislivelloNeg = (p.dislivello_neg !== undefined && p.dislivello_neg !== null) ? p.dislivello_neg : 0;
-      const tempoStr = p.tempo_effettivo || p.durata || '';
-
-      const sforzoVal = (p.sforzo !== undefined && p.sforzo !== null && !isNaN(p.sforzo)) 
-        ? Number(p.sforzo).toFixed(1) 
-        : null;
-      const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
-
-      let imgHtml = '';
-      if (p.image_url) {
-        imgHtml = '<br><img src="' + p.image_url + '" style="width:100%; max-height:140px; object-fit:cover; border-radius:6px; margin-top:6px;">';
-      }
-
-      let linkHtml = '';
-      if (p.link) {
-        linkHtml = '<br><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 5px;">Vedi su Wikiloc ↗</a>';
-      }
-
-      const popupContent = 
-        '<strong>' + p.name + '</strong><br>' +
-        'Distanza: ' + p.km + ' km<br>' +
-        'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
-        'Tempo registrato: ' + tempoStr + '<br>' +
-        'Difficoltà: ' + p.difficolta + sforzoStr +
-        imgHtml +
-        linkHtml;
-
-      layer.bindPopup(popupContent);
-
-      layer.on({
-        mouseover: function(e) {
-          if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
-            this.openPopup();
-          }
+    return {
+        "type": "Feature",
+        "properties": {
+            "name": track_name,
+            "km": km,
+            "dislivello": dislivello_pos,
+            "dislivello_neg": dislivello_neg,
+            "difficolta": difficolta,
+            "sforzo": effort_score,
+            "durata": durata_cat,
+            "tempo_effettivo": tempo_testo,
+            "stato": stato,
+            "link": wikiloc_link,
+            "image_url": image_url
         },
-        mouseout: function(e) {
-          if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
-            this.closePopup();
-          }
-        }
-      });
-    }
-
-    // 5. Filtering Logic with Min/Max Bounds
-    function applyFilters() {
-      if (!allData) return;
-
-      const diffVal = document.getElementById('filter-difficolta').value;
-      const durataVal = document.getElementById('filter-durata').value;
-
-      let distMin = parseFloat(document.getElementById('filter-dist-min').value);
-      let distMax = parseFloat(document.getElementById('filter-dist-max').value);
-      let disPosMin = parseFloat(document.getElementById('filter-dis-pos-min').value);
-      let disPosMax = parseFloat(document.getElementById('filter-dis-pos-max').value);
-      let disNegMin = parseFloat(document.getElementById('filter-dis-neg-min').value);
-      let disNegMax = parseFloat(document.getElementById('filter-dis-neg-max').value);
-
-      // Prevent min from exceeding max
-      if (distMin > distMax) [distMin, distMax] = [distMax, distMin];
-      if (disPosMin > disPosMax) [disPosMin, disPosMax] = [disPosMax, disPosMin];
-      if (disNegMin > disNegMax) [disNegMin, disNegMax] = [disNegMax, disNegMin];
-
-      // Update Slider Label Displays
-      document.getElementById('val-dist').textContent = `${distMin} - ${distMax} km`;
-      document.getElementById('val-dis-pos').textContent = `${disPosMin} - ${disPosMax} m`;
-      document.getElementById('val-dis-neg').textContent = `${disNegMin} - ${disNegMax} m`;
-
-      // Filter Features
-      const filteredFeatures = allData.features.filter(feature => {
-        const p = feature.properties;
-        
-        const matchDiff = (diffVal === 'Tutte' || p.difficolta === diffVal);
-        const matchDist = (p.km >= distMin && p.km <= distMax);
-        const matchDisPos = (p.dislivello >= disPosMin && p.dislivello <= disPosMax);
-        const matchDisNeg = ((p.dislivello_neg || 0) >= disNegMin && (p.dislivello_neg || 0) <= disNegMax);
-        const matchDurata = (durataVal === 'Tutte' || p.durata === durataVal);
-
-        return matchDiff && matchDist && matchDisPos && matchDisNeg && matchDurata;
-      });
-
-      // Clear existing tracks and render filtered set
-      if (geoJsonLayer) {
-        map.removeLayer(geoJsonLayer);
-      }
-
-      geoJsonLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
-        style: function(feature) {
-          return {
-            color: getNeonColor(feature.properties.difficolta),
-            weight: 5,
-            opacity: 0.95,
-            lineCap: 'round',
-            lineJoin: 'round'
-          };
+        "geometry": {
+            "type": "LineString",
+            "coordinates": coords,
         },
-        onEachFeature: onEachFeature
-      }).addTo(map);
-
-      // Update counter text
-      document.getElementById('stats').textContent = `Mostrati: ${filteredFeatures.length} di ${allData.features.length} percorsi`;
     }
 
-    // 6. Event Listeners for Filters
-    document.getElementById('filter-difficolta').addEventListener('change', applyFilters);
-    document.getElementById('filter-durata').addEventListener('change', applyFilters);
 
-    ['filter-dist-min', 'filter-dist-max', 'filter-dis-pos-min', 'filter-dis-pos-max', 'filter-dis-neg-min', 'filter-dis-neg-max'].forEach(id => {
-      document.getElementById(id).addEventListener('input', applyFilters);
-    });
+def main():
+    gpx_files = glob.glob('**/*.gpx', recursive=True)
+    if not gpx_files:
+        print("Nessun file .gpx trovato!")
+        return
 
-    // 7. Fetch GeoJSON Data
-    fetch('percorsi.geojson?v=' + new Date().getTime())
-      .then(response => response.json())
-      .then(data => {
-        allData = data;
-        applyFilters();
+    features = [processa_gpx(f) for f in gpx_files]
 
-        if (geoJsonLayer && geoJsonLayer.getBounds().isValid()) {
-          map.fitBounds(geoJsonLayer.getBounds(), { padding: [30, 30] });
-        }
-      })
-      .catch(error => console.error('Error loading GeoJSON:', error));
-  </script>
-</body>
-</html>
+    with open("percorsi.geojson", "w", encoding="utf-8") as f:
+        json.dump({"type": "FeatureCollection", "features": features}, f, ensure_ascii=False, indent=2)
+
+    print(f"Generato percorsi.geojson per {len(features)} percorsi.")
+
+
+if __name__ == "__main__":
+    main()
