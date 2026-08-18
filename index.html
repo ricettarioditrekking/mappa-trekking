@@ -382,8 +382,6 @@
       const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
       const statoStr = (p.stato === 'fatta') ? 'Completato' : 'Da fare';
 
-      const fileKey = p.file_location ? p.file_location.replace(/[^a-zA-Z0-9]/g, '_') : Math.random();
-
       let linkHtml = p.link ? `<div style="margin-top: 4px; margin-bottom: 10px;">` +
                               `<a href="${p.link}" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a>` +
                               `</div>` : '';
@@ -403,8 +401,8 @@
         </details>
       `;
 
-      // Contenitore vuoto nel popup che riceverà lo stesso HTML del pannello laterale
-      const meteoPopupHtml = `<div class="popup-meteo-dynamic-container" style="margin-top: 10px; font-size: 0.85rem;"></div>`;
+      // Contenitore dinamico per il meteo nel popup
+      const meteoPopupHtml = `<div class="popup-meteo-dynamic-container" style="margin-top: 10px; font-size: 0.85rem;"><em>Seleziona o ricarica il meteo...</em></div>`;
 
       const popupContent = 
         '<div style="font-size: 1.05rem; font-weight: bold; margin-bottom: 6px; padding-right: 25px; line-height: 1.3;">' + p.name + '</div>' +
@@ -430,6 +428,14 @@
         const autoUpdateEnabled = document.getElementById('chk-autoupdate-meteo').checked;
         if (autoUpdateEnabled) {
           caricaMeteoTraccia();
+        } else {
+          // Se l'autoupdate è spento, mostra nel popup quello che c'è attualmente nel pannello laterale
+          const sidebarContent = document.getElementById('risultato-meteo').innerHTML;
+          const popupEl = e.popup.getElement();
+          if (popupEl) {
+            const popupDynamic = popupEl.querySelector('.popup-meteo-dynamic-container');
+            if (popupDynamic) popupDynamic.innerHTML = sidebarContent;
+          }
         }
 
         const popup = e.popup;
@@ -491,7 +497,6 @@
       const loadingMsg = "Caricamento meteo in corso...";
       containerRisultato.innerHTML = loadingMsg;
       
-      // Aggiorna anche l'eventuale popup aperto con il messaggio di caricamento
       if (selectedLayerForMeteo.isPopupOpen()) {
         const popupEl = selectedLayerForMeteo.getPopup().getElement();
         if (popupEl) {
@@ -541,13 +546,12 @@
           const emojiMedio = getMeteoEmoji(mediaPioggia);
           const summaryText = conteggioSlot > 0 ? `${emojiMedio} (${minTemp}°C - ${maxTemp}°C)` : `${emojiMedio} (N/D)`;
 
-          // Costruiamo il blocco finale identico per sidebar e popup
           const htmlFinale = `<div style="margin-bottom: 6px; font-weight: bold;">Meteo previsto: ${summaryText}</div>` + orarioDettagliHtml;
 
-          // Inserisce nel pannello laterale
+          // Aggiorna pannello laterale
           containerRisultato.innerHTML = htmlFinale;
 
-          // Inserisce esattamente lo stesso blocco nel popup se è aperto
+          // Aggiorna popup se aperto
           if (selectedLayerForMeteo && selectedLayerForMeteo.isPopupOpen()) {
             const currentPopupEl = selectedLayerForMeteo.getPopup().getElement();
             if (currentPopupEl) {
