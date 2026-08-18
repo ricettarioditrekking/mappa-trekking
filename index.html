@@ -118,17 +118,17 @@
       filter: drop-shadow(0px 0px 3px currentColor);
     }
 
-    /* Limit popup size & enable vertical scroll bar */
+    /* FIX POPUP OVERFLOW: Blocco altezza massima e scrollbar interno */
     .leaflet-popup-content-wrapper {
-      max-height: 70vh;
-      overflow: hidden;
+      max-height: 320px !important;
+      border-radius: 8px;
     }
 
     .leaflet-popup-content {
-      max-height: 65vh;
-      overflow-y: auto;
-      padding-right: 5px;
-      margin: 13px 19px 13px 19px;
+      max-height: 280px !important;
+      overflow-y: auto !important;
+      margin: 12px 14px !important;
+      padding-right: 6px;
     }
 
     /* Custom style per il menu a tendina nei popup */
@@ -313,7 +313,7 @@
       }
 
       const detailsHtml = `
-        <details id="details-${feature.id || Math.random().toString(36).substr(2, 9)}">
+        <details>
           <summary>Maggiori dettagli</summary>
           <div class="details-content">
             <strong>Data:</strong> ${p.data_trekking || 'N/D'}<br>
@@ -336,22 +336,13 @@
         linkHtml;
 
       layer.bindPopup(popupContent, {
-        autoPanPadding: [20, 20]
+        autoPanPaddingTopLeft: [20, 80]
       });
 
       layer.on({
         mouseover: function(e) {
           if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
             this.openPopup();
-          }
-        },
-        popupopen: function(e) {
-          const popupNode = e.popup.getElement();
-          const detailsNode = popupNode.querySelector('details');
-          if (detailsNode) {
-            detailsNode.addEventListener('toggle', () => {
-              e.popup.update();
-            });
           }
         }
       });
