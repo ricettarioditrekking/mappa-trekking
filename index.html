@@ -405,7 +405,6 @@
 
       const meteoPopupHtml = `<div id="popup-meteo-content-${fileKey}" style="margin-top: 10px; font-size: 0.85rem;"></div>`;
 
-      // Riga fissa "Meteo previsto: ..." con uno span dinamico per l'aggiornamento
       const meteoSummaryLine = `<div style="margin-top: 4px; font-weight: bold; color: #2c3e50;">Meteo previsto: <span id="popup-meteo-summary-${fileKey}">in attesa...</span></div>`;
 
       const popupContent = 
@@ -524,7 +523,8 @@
           orarioDettagliHtml += `<strong>Previsioni ora per ora:</strong><br>`;
 
           let sommaPioggia = 0;
-          let sommaTemp = 0;
+          let minTemp = Infinity;
+          let maxTemp = -Infinity;
           let conteggioSlot = 0;
 
           for (let i = 0; i <= durataOre; i++) {
@@ -535,7 +535,8 @@
               const pioggiaSlot = data.hourly.precipitation_probability[currentIndex];
               
               sommaPioggia += pioggiaSlot;
-              sommaTemp += tempSlot;
+              if (tempSlot < minTemp) minTemp = tempSlot;
+              if (tempSlot > maxTemp) maxTemp = tempSlot;
               conteggioSlot++;
 
               let etichettaTempo = (i === 0) ? "Partenza" : (i === durataOre ? "Arrivo" : `+${i}h`);
@@ -545,10 +546,9 @@
           orarioDettagliHtml += `</div>`;
 
           const mediaPioggia = conteggioSlot > 0 ? (sommaPioggia / conteggioSlot) : 0;
-          const mediaTemp = conteggioSlot > 0 ? (sommaTemp / conteggioSlot).toFixed(1) : 0;
           const emojiMedio = getMeteoEmoji(mediaPioggia);
 
-          const summaryText = `${emojiMedio} (${mediaTemp}°C)`;
+          const summaryText = conteggioSlot > 0 ? `${emojiMedio} (${minTemp}°C - ${maxTemp}°C)` : `${emojiMedio} (N/D)`;
 
           if (popupSummaryContainer) {
             popupSummaryContainer.textContent = summaryText;
