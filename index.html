@@ -7,65 +7,85 @@
 <!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: Arial, sans-serif; display: flex; }
-#sidebar { width: 320px; height: 100%; background: #f8f9fa; border-right: 1px solid #ddd; padding: 20px; overflow-y: auto; z-index: 1000; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
-#sidebar h2 { margin-top: 0; font-size: 1.2rem; margin-bottom: 20px; }
-.filter-group { margin-bottom: 18px; }
-.filter-group label { display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 6px; }
-.filter-group select { width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ccc; }
-.checkbox-group { display: flex; gap: 15px; margin-top: 5px; }
-.checkbox-group label { font-weight: normal; font-size: 0.85rem; cursor: pointer; }
-.range-val { float: right; font-size: 0.85rem; color: #555; font-weight: normal; }
-.range-sliders { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
-.slider-row { display: flex; align-items: center; gap: 8px; }
-.slider-row span { font-size: 0.75rem; color: #666; width: 30px; }
-.slider-row input[type="range"] { flex: 1; }
-#stats { font-style: italic; color: #777; font-size: 0.85rem; margin-top: 25px; }
-#map { flex: 1; height: 100%; }
-.leaflet-interactive { filter: drop-shadow(0px 0px 3px currentColor); transition: stroke-width 0.15s ease; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: Arial, sans-serif; display: flex; }
+  
+  /* Left Sidebar Styling */
+  #sidebar { width: 320px; height: 100%; background: #f8f9fa; border-right: 1px solid #ddd; padding: 20px; overflow-y: auto; z-index: 1000; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+  #sidebar h2 { margin-top: 0; font-size: 1.2rem; margin-bottom: 20px; }
+  
+  .filter-group { margin-bottom: 18px; }
+  .filter-group label { display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 6px; }
+  .filter-group select { width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ccc; }
+  
+  .checkbox-group { display: flex; gap: 15px; margin-top: 5px; }
+  .checkbox-group label { font-weight: normal; font-size: 0.85rem; cursor: pointer; }
+  
+  .range-val { float: right; font-size: 0.85rem; color: #555; font-weight: normal; }
+  .range-sliders { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+  .slider-row { display: flex; align-items: center; gap: 8px; }
+  .slider-row span { font-size: 0.75rem; color: #666; width: 30px; }
+  .slider-row input[type="range"] { flex: 1; }
+  
+  #stats { font-style: italic; color: #777; font-size: 0.85rem; margin-top: 25px; }
+  #map { flex: 1; height: 100%; }
+  
+  .leaflet-interactive { filter: drop-shadow(0px 0px 3px currentColor); transition: stroke-width 0.15s ease; }
 
-/* POPUP POSIZIONATO A DESTRA CON FRECCIA LATERALE */
-.popup-right { margin-bottom: 0 !important; }
-.popup-right .leaflet-popup-tip-container { display: none !important; }
-.popup-right .leaflet-popup-content-wrapper { position: relative; border-radius: 12px; padding: 6px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
-.popup-right .leaflet-popup-content-wrapper::before { 
-  content: ""; 
-  position: absolute; 
-  left: -6px; 
-  top: 24px; 
-  width: 14px; 
-  height: 14px; 
-  background: #ffffff; 
-  transform: rotate(45deg); 
-  z-index: 1; 
-  box-shadow: -2px 2px 3px rgba(0,0,0,0.15); 
-  border-radius: 2px; 
-}
-.popup-right .leaflet-popup-content { margin: 12px !important; line-height: 1.5; color: #333; }
-.popup-right img { width: 100%; max-height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; display: block; }
+  /* =========================================
+     POPUP A DESTRA - DESIGN, MARGINI E SCROLLBAR
+     ========================================= */
+  .popup-right { margin-bottom: 0 !important; }
+  .popup-right .leaflet-popup-tip-container { display: none !important; }
+  .popup-right .leaflet-popup-content-wrapper { position: relative; border-radius: 12px; padding: 6px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+  .popup-right .leaflet-popup-content-wrapper::before { 
+    content: ''; position: absolute; left: -6px; bottom: 26px; width: 14px; height: 14px; 
+    background: #ffffff; transform: rotate(45deg); box-shadow: -2px 2px 3px rgba(0,0,0,0.15); z-index: -1; border-radius: 2px; 
+  }
+  .popup-right .leaflet-popup-content { 
+    margin: 16px 22px 16px 16px !important; padding-right: 14px !important; 
+    max-height: 320px !important; overflow-y: auto !important; line-height: 1.5; color: #333; 
+  }
 
-/* Stile per i Badge Meteo sui percorsi */
-.meteo-badge {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid #94a3b8;
-  border-radius: 20px;
-  padding: 4px 8px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: #1e293b;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.25);
-  white-space: nowrap;
-  text-align: center;
-  transform: translate(-50%, -50%);
-  pointer-events: none; /* Lascia passare i click al percorso sottostante */
-}
+  /* --- Scrollbar Custom Elegante --- */
+  .popup-right .leaflet-popup-content::-webkit-scrollbar { width: 6px; }
+  .popup-right .leaflet-popup-content::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+  .popup-right .leaflet-popup-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+  .popup-right .leaflet-popup-content::-webkit-scrollbar-thumb:hover { background: #aaa; }
 
-@media (max-width: 768px) {
-  body { flex-direction: column; }
-  #sidebar { width: 100%; height: auto; max-height: 40vh; }
-  #map { height: 60vh; }
-}
+  /* --- Nuova "X" di chiusura: Bottone Premium Flottante --- */
+  .popup-right .leaflet-popup-close-button { 
+    top: 10px !important; right: 10px !important; width: 26px !important; height: 26px !important; 
+    line-height: 26px !important; text-align: center !important; font-size: 16px !important; 
+    font-weight: bold; color: #555 !important; background: #ffffff !important; border-radius: 50%; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10; text-decoration: none; transition: all 0.2s ease; 
+  }
+  .popup-right .leaflet-popup-close-button:hover { color: #000 !important; background: #f4f4f4 !important; transform: scale(1.05); }
+
+  /* Custom style per il menu a tendina nei popup */
+  details { margin-top: 12px; background: #f7f7f7; padding: 8px 10px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #eaeaea; }
+  summary { font-weight: bold; cursor: pointer; color: #222; outline: none; }
+  .details-content { margin-top: 8px; color: #444; word-break: break-word; }
+
+  /* Stile per i Badge Meteo sui percorsi */
+  .meteo-badge {
+    background: rgba(255, 255, 255, 0.95); border: 1px solid #94a3b8; border-radius: 20px; 
+    padding: 4px 8px; font-size: 0.85rem; font-weight: bold; color: #1e293b; 
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25); white-space: nowrap; text-align: center; 
+    transform: translate(-50%, -50%); pointer-events: none;
+  }
+
+  /* Layout Pulsanti Meteo */
+  .button-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .btn-primary { flex: 2; padding: 8px; background-color: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+  .btn-secondary { flex: 1; padding: 8px; background-color: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
+  .btn-secondary:hover { background-color: #cbd5e1; }
+
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; height: auto; max-height: 40vh; }
+    #map { height: 60vh; }
+  }
 </style>
 </head>
 <body>
@@ -131,9 +151,10 @@ html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: Aria
     <label for="data-partenza" style="font-size: 0.85rem; font-weight: normal; margin-bottom: 2px;">Data escursione:</label>
     <input type="date" id="data-partenza" style="width: 100%; margin-bottom: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
     
-    <button id="btn-meteo-globale" style="width: 100%; padding: 8px; background-color: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; margin-bottom: 8px;">
-      Genera Badge Meteo (Percorsi Visibili)
-    </button>
+    <div class="button-row">
+      <button id="btn-meteo-globale" class="btn-primary">Genera Badge</button>
+      <button id="btn-nascondi-badge" class="btn-secondary">Nascondi</button>
+    </div>
     
     <div style="margin-bottom: 8px; font-size: 0.85rem;">
       <label><input type="checkbox" id="chk-autoupdate-meteo" checked> Dettaglio automatico hover (traccia singola)</label>
@@ -168,9 +189,9 @@ const trackMeteoCache = new Map();
 let hoverMeteoTimeout = null;
 
 const map = L.map('map').setView([46.4983, 11.3548], 10);
-const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
   maxZoom: 17,
-  attribution: 'Map data: © OpenStreetMap contributors | Map style: © OpenTopoMap'
+  attribution: 'Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)'
 }).addTo(map);
 
 // Layer dedicato alle etichette meteo sopra ai percorsi
@@ -222,26 +243,65 @@ function getThreePointsFromLayer(layer) {
   return [start, mid, end];
 }
 
+// Funzione ripristinata dal codice index_for_pop-ups
 function onEachFeature(feature, layer) {
   const p = feature.properties;
-  const imgUrl = p.image || p.foto || p.img || p.thumbnail || p.picture || p.image_url;
-  const imgHtml = imgUrl ? `<img src="${imgUrl}" alt="${p.name}">` : '';
+  const dislivelloNeg = (p.dislivello_neg !== undefined && p.dislivello_neg !== null) ? p.dislivello_neg : 0;
+  const tempoStr = p.tempo_effettivo || p.durata || '';
+  const sforzoVal = (p.sforzo !== undefined && p.sforzo !== null && !isNaN(p.sforzo)) ? Number(p.sforzo).toFixed(1) : null;
+  const sforzoStr = sforzoVal ? ' (' + sforzoVal + ')' : '';
+  const statoStr = (p.stato === 'fatta') ? 'Completato' : 'Da fare';
 
-  layer.bindPopup(`
-    ${imgHtml}
-    <strong>${p.name}</strong><br>
-    Distanza: ${p.km} km<br>
-    Difficoltà: ${p.difficolta}
-  `, { 
-    className: 'popup-right', 
-    minWidth: 260,
-    offset: L.point(150, -10) 
+  let linkHtml = p.link ? '<div style="margin-top: 4px; margin-bottom: 10px;"><a href="' + p.link + '" target="_blank" rel="noopener noreferrer" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a></div>' : '';
+  let imgHtml = p.image_url ? '<img src="' + p.image_url + '" style="width:100%; max-height:150px; object-fit:cover; border-radius:6px; margin-bottom:12px;">' : '';
+
+  const detailsHtml = `
+    <details>
+      <summary>Maggiori dettagli</summary>
+      <div class="details-content">
+        <strong>Stato:</strong> ${statoStr}<br>
+        <strong>Data:</strong> ${p.data_trekking || 'N/D'}<br>
+        <strong>In movimento:</strong> ${p.tempo_movimento || 'N/D'}<br>
+        <strong>In pausa:</strong> ${p.tempo_pausa || 'N/D'}<br>
+        <strong>File:</strong> <code>${p.file_location || 'N/D'}</code>
+      </div>
+    </details>
+  `;
+
+  const popupContent = 
+    '<div style="font-size: 1.05rem; font-weight: bold; margin-bottom: 6px; padding-right: 25px; line-height: 1.3;">' + p.name + '</div>' +
+    linkHtml + imgHtml +
+    'Distanza: ' + p.km + ' km<br>' +
+    'Dislivello: +' + p.dislivello + 'm / -' + dislivelloNeg + 'm<br>' +
+    'Tempo totale: ' + tempoStr + '<br>' +
+    'Difficoltà: ' + p.difficolta + sforzoStr +
+    detailsHtml;
+
+  layer.bindPopup(popupContent, {
+    className: 'popup-right',
+    minWidth: 285,
+    maxWidth: 285,
+    offset: [168, 31],
+    autoPanPadding: [50, 50]
   });
 
+  layer.on('popupopen', function(e) {
+    const popup = e.popup;
+    const detailsElem = popup.getElement().querySelector('details');
+    if (detailsElem) {
+      detailsElem.addEventListener('toggle', function() {
+        popup.update(); 
+      });
+    }
+  });
+
+  // Gestione stile e innesco meteo al passaggio del mouse
   layer.on('mouseover', function(e) {
     selectedLayerForMeteo = layer;
     layer.setStyle({ weight: 8, opacity: 1 });
-    this.openPopup(e.latlng);
+    if (e.originalEvent && e.originalEvent.pointerType !== 'touch') {
+      this.openPopup();
+    }
     if (document.getElementById('chk-autoupdate-meteo').checked) {
       clearTimeout(hoverMeteoTimeout);
       hoverMeteoTimeout = setTimeout(() => { caricaMeteoTracciaSingola(); }, 400);
@@ -258,7 +318,6 @@ function onEachFeature(feature, layer) {
   });
 }
 
-// Funzione originale per il dettaglio popup orario
 async function caricaMeteoTracciaSingola() {
   const container = document.getElementById('risultato-meteo');
   if (!selectedLayerForMeteo) return;
@@ -288,11 +347,11 @@ async function caricaMeteoTracciaSingola() {
 
 function renderMeteoSingolo(data, nomePercorso, dataInput) {
   const container = document.getElementById('risultato-meteo');
-  const indexInizio = data.hourly.time.findIndex(t => t.startsWith(`${dataInput}T08:00`)); // parte dalle 8
+  const indexInizio = data.hourly.time.findIndex(t => t.startsWith(`${dataInput}T08:00`));
   
   if (indexInizio !== -1) {
     let orarioDettagliHtml = `<div style="max-height: 140px; overflow-y: auto;">`;
-    for (let i = 0; i <= 10; i+=2) { // 08:00, 10:00, 12:00, 14:00, 16:00, 18:00
+    for (let i = 0; i <= 10; i+=2) { 
       if (indexInizio + i < data.hourly.time.length) {
         const idx = indexInizio + i;
         const oraSlot = data.hourly.time[idx].split('T')[1];
@@ -310,7 +369,6 @@ function renderMeteoSingolo(data, nomePercorso, dataInput) {
   }
 }
 
-// NUOVA LOGICA: BATCH API PER BADGE GLOBALI (Smart Labels)
 async function generaBadgeMeteoVisibili() {
   if (!geoJsonLayer) return;
   
@@ -322,7 +380,6 @@ async function generaBadgeMeteoVisibili() {
   
   let visibleTrails = [];
   geoJsonLayer.eachLayer(layer => {
-    // Seleziona solo i percorsi che si trovano (anche parzialmente) nell'area visibile dello schermo
     if (map.getBounds().intersects(layer.getBounds())) {
       visibleTrails.push(layer);
     }
@@ -333,118 +390,161 @@ async function generaBadgeMeteoVisibili() {
     return;
   }
 
-  // Limitiamo a 12 percorsi visibili per chiamata batch per evitare errori (12 * 3 = 36 punti, ben sotto i 50 di Open-Meteo)
-  if (visibleTrails.length > 12) {
-    visibleTrails = visibleTrails.slice(0, 12);
-  }
-
   statusBox.innerHTML = `Calcolo meteo per ${visibleTrails.length} percorsi in corso...`;
 
-  let queriesLat = [];
-  let queriesLng = [];
-  
-  // Estrai 3 punti (Start, Mid, End) per ogni percorso
-  visibleTrails.forEach(layer => {
-    const pts = getThreePointsFromLayer(layer);
-    if (pts) {
-      pts.forEach(p => {
-        queriesLat.push(p.lat.toFixed(4));
-        queriesLng.push(p.lng.toFixed(4));
-      });
-    }
-  });
+  const chunkSize = 15;
+  let fetchPromises = [];
+  let trailChunks = [];
 
-  if (queriesLat.length === 0) return;
+  for (let i = 0; i < visibleTrails.length; i += chunkSize) {
+    const chunk = visibleTrails.slice(i, i + chunkSize);
+    trailChunks.push(chunk);
 
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${queriesLat.join(',')}&longitude=${queriesLng.join(',')}&forecast_days=3&hourly=temperature_2m,precipitation_probability,weathercode&timezone=auto`;
-
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("API Limit");
-    const data = await res.json();
-    const results = Array.isArray(data) ? data : [data];
-
-    visibleTrails.forEach((layer, idx) => {
-      const baseIdx = idx * 3;
-      // Dati per Start, Mid e End del sentiero corrente
-      const trailData = [results[baseIdx], results[baseIdx+1], results[baseIdx+2]];
-      
-      let minTemp = Infinity;
-      let maxTemp = -Infinity;
-      let maxRain = 0;
-      let worstSeverity = -1;
-      let worstEmoji = '☀️';
-
-      trailData.forEach(ptData => {
-        if(!ptData || !ptData.hourly) return;
-        
-        ptData.hourly.time.forEach((timeStr, tIdx) => {
-          if (timeStr.startsWith(dateInput)) {
-            const hour = parseInt(timeStr.split('T')[1].substring(0,2));
-            // Finestra escursionistica: dalle 08:00 alle 18:00
-            if (hour >= 8 && hour <= 18) { 
-              const t = ptData.hourly.temperature_2m[tIdx];
-              const r = ptData.hourly.precipitation_probability[tIdx];
-              const wCode = ptData.hourly.weathercode[tIdx];
-              
-              let emoji = getMeteoEmoji(wCode);
-              if (r >= 50 && ['☁️','⛅','☀️'].includes(emoji)) emoji = '🌧️';
-
-              if (t < minTemp) minTemp = t;
-              if (t > maxTemp) maxTemp = t;
-              if (r > maxRain) maxRain = r;
-              
-              const sev = getMeteoSeverity(emoji);
-              if (sev > worstSeverity) {
-                worstSeverity = sev;
-                worstEmoji = emoji;
-              }
-            }
-          }
+    let queriesLat = [];
+    let queriesLng = [];
+    
+    chunk.forEach(layer => {
+      const pts = getThreePointsFromLayer(layer);
+      if (pts) {
+        pts.forEach(p => {
+          queriesLat.push(p.lat.toFixed(4));
+          queriesLng.push(p.lng.toFixed(4));
         });
-      });
-
-      if (minTemp !== Infinity) {
-        // Appende il Badge al centro del percorso
-        const center = layer.getBounds().getCenter();
-        const iconHtml = `<div class="meteo-badge">${worstEmoji} ${maxRain}% | ${Math.round(minTemp)}-${Math.round(maxTemp)}°C</div>`;
-        const icon = L.divIcon({
-          className: 'custom-meteo-icon',
-          html: iconHtml,
-          iconSize: null
-        });
-        L.marker(center, { icon: icon }).addTo(meteoLabelsLayer);
       }
     });
+
+    if (queriesLat.length > 0) {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${queriesLat.join(',')}&longitude=${queriesLng.join(',')}&forecast_days=3&hourly=temperature_2m,precipitation_probability,weathercode&timezone=auto`;
+      
+      const fetchPromise = fetch(url).then(res => {
+        if (!res.ok) throw new Error(`API Error: ${res.status}`);
+        return res.json();
+      });
+      fetchPromises.push(fetchPromise);
+    }
+  }
+
+  try {
+    const allChunkResults = await Promise.all(fetchPromises);
+
+    trailChunks.forEach((chunk, chunkIdx) => {
+      const data = allChunkResults[chunkIdx];
+      const results = Array.isArray(data) ? data : [data];
+
+      chunk.forEach((layer, idx) => {
+        const baseIdx = idx * 3;
+        const trailData = [results[baseIdx], results[baseIdx+1], results[baseIdx+2]];
+        
+        let minTemp = Infinity;
+        let maxTemp = -Infinity;
+        let maxRain = 0;
+        let worstSeverity = -1;
+        let worstEmoji = '☀️';
+
+        trailData.forEach(ptData => {
+          if(!ptData || !ptData.hourly) return;
+          
+          ptData.hourly.time.forEach((timeStr, tIdx) => {
+            if (timeStr.startsWith(dateInput)) {
+              const hour = parseInt(timeStr.split('T')[1].substring(0,2));
+              if (hour >= 8 && hour <= 18) { 
+                const t = ptData.hourly.temperature_2m[tIdx];
+                const r = ptData.hourly.precipitation_probability[tIdx];
+                const wCode = ptData.hourly.weathercode[tIdx];
+                
+                let emoji = getMeteoEmoji(wCode);
+                if (r >= 50 && ['☁️','⛅','☀️'].includes(emoji)) emoji = '🌧️';
+
+                if (t < minTemp) minTemp = t;
+                if (t > maxTemp) maxTemp = t;
+                if (r > maxRain) maxRain = r;
+                
+                const sev = getMeteoSeverity(emoji);
+                if (sev > worstSeverity) {
+                  worstSeverity = sev;
+                  worstEmoji = emoji;
+                }
+              }
+            }
+          });
+        });
+
+        if (minTemp !== Infinity) {
+          const center = layer.getBounds().getCenter();
+          const iconHtml = `<div class="meteo-badge">${worstEmoji} ${maxRain}% | ${Math.round(minTemp)}-${Math.round(maxTemp)}°C</div>`;
+          const icon = L.divIcon({
+            className: 'custom-meteo-icon',
+            html: iconHtml,
+            iconSize: null
+          });
+          L.marker(center, { icon: icon }).addTo(meteoLabelsLayer);
+        }
+      });
+    });
     
-    statusBox.innerHTML = "Badge Generati! (Finestra 08:00-18:00)";
+    statusBox.innerHTML = `Badge Generati per ${visibleTrails.length} percorsi! (08:00-18:00)`;
   } catch (e) {
     console.error(e);
-    statusBox.innerHTML = "⚠️ Errore API: troppe richieste. Riprova.";
+    statusBox.innerHTML = "⚠️ Errore API: Limite richieste superato o errore di rete. Riprova tra poco.";
   }
 }
 
+// Integrazione logica Filtri completa dal file pop-up fornito
 function applyFilters() {
   if (!allData) return;
+
   const diffVal = document.getElementById('filter-difficolta').value;
+  const durataVal = document.getElementById('filter-durata').value;
+  const showFatte = document.getElementById('chk-fatte').checked;
+  const showNonFatte = document.getElementById('chk-non-fatte').checked;
+
   let distMin = parseFloat(document.getElementById('filter-dist-min').value);
   let distMax = parseFloat(document.getElementById('filter-dist-max').value);
+  let disPosMin = parseFloat(document.getElementById('filter-dis-pos-min').value);
+  let disPosMax = parseFloat(document.getElementById('filter-dis-pos-max').value);
+  let disNegMin = parseFloat(document.getElementById('filter-dis-neg-min').value);
+  let disNegMax = parseFloat(document.getElementById('filter-dis-neg-max').value);
+
   if (distMin > distMax) [distMin, distMax] = [distMax, distMin];
-  
-  const filteredFeatures = allData.features.filter(f => {
-    return (diffVal === 'Tutte' || f.properties.difficolta === diffVal) && 
-           (f.properties.km >= distMin && f.properties.km <= distMax);
+  if (disPosMin > disPosMax) [disPosMin, disPosMax] = [disPosMax, disPosMin];
+  if (disNegMin > disNegMax) [disNegMin, disNegMax] = [disNegMax, disNegMin];
+
+  document.getElementById('val-dist').textContent = `${distMin} - ${distMax} km`;
+  document.getElementById('val-dis-pos').textContent = `${disPosMin} - ${disPosMax} m`;
+  document.getElementById('val-dis-neg').textContent = `${disNegMin} - ${disNegMax} m`;
+
+  const filteredFeatures = allData.features.filter(feature => {
+    const p = feature.properties;
+    
+    const isFatta = p.stato === 'fatta';
+    const matchStato = (isFatta && showFatte) || (!isFatta && showNonFatte);
+
+    const matchDiff = (diffVal === 'Tutte' || p.difficolta === diffVal);
+    const matchDist = (p.km >= distMin && p.km <= distMax);
+    const matchDisPos = (p.dislivello >= disPosMin && p.dislivello <= disPosMax);
+    const matchDisNeg = ((p.dislivello_neg || 0) >= disNegMin && (p.dislivello_neg || 0) <= disNegMax);
+    const matchDurata = (durataVal === 'Tutte' || p.durata === durataVal);
+
+    return matchStato && matchDiff && matchDist && matchDisPos && matchDisNeg && matchDurata;
   });
 
   if (geoJsonLayer) map.removeLayer(geoJsonLayer);
+
   geoJsonLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
-    style: f => ({ color: getNeonColor(f.properties.difficolta), weight: 5, opacity: 0.95 }),
+    style: function(feature) {
+      return {
+        color: getNeonColor(feature.properties.difficolta),
+        weight: 5,
+        opacity: 0.95,
+        lineCap: 'round',
+        lineJoin: 'round'
+      };
+    },
     onEachFeature: onEachFeature
   }).addTo(map);
-  
+
   document.getElementById('stats').textContent = `Mostrati: ${filteredFeatures.length} di ${allData.features.length} percorsi`;
   
-  // Rimuove i vecchi badge meteo quando cambiano i filtri
   meteoLabelsLayer.clearLayers();
   document.getElementById('risultato-meteo').innerHTML = "Filtri applicati. Premi su 'Genera Badge' per aggiornare il meteo.";
 }
@@ -454,26 +554,34 @@ document.querySelectorAll('select, input[type="range"], input[type="checkbox"]')
   if(el.type === 'range') el.addEventListener('input', applyFilters);
 });
 
+// Event listeners dei pulsanti Meteo
 document.getElementById('btn-meteo-globale').addEventListener('click', generaBadgeMeteoVisibili);
+
+document.getElementById('btn-nascondi-badge').addEventListener('click', () => {
+  meteoLabelsLayer.clearLayers();
+  document.getElementById('risultato-meteo').innerHTML = "Badge nascosti.";
+});
 
 document.getElementById('data-partenza').addEventListener('change', () => {
   meteoLabelsLayer.clearLayers();
 });
 
-// Resetta i badge quando la mappa viene mossa
 map.on('moveend', function() {
   if (meteoLabelsLayer.getLayers().length > 0) {
     document.getElementById('risultato-meteo').innerHTML = "Mappa spostata. Premi su 'Genera Badge' per aggiornare l'area visibile.";
   }
 });
 
-fetch('percorsi.geojson')
-  .then(res => res.json())
+fetch('percorsi.geojson?v=' + new Date().getTime())
+  .then(response => response.json())
   .then(data => {
-    allData = data; 
+    allData = data;
     applyFilters();
-    if (geoJsonLayer) map.fitBounds(geoJsonLayer.getBounds(), { padding: [30, 30] });
-  });
+    if (geoJsonLayer && geoJsonLayer.getBounds().isValid()) {
+      map.fitBounds(geoJsonLayer.getBounds(), { padding: [30, 30] });
+    }
+  })
+  .catch(error => console.error('Error loading GeoJSON:', error));
 </script>
 </body>
 </html>
