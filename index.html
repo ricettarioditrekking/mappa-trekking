@@ -103,7 +103,6 @@
       <label>Stato Percorso:</label>
       <div class="checkbox-group">
         <label><input type="checkbox" id="chk-fatte" checked> Completati</label>
-        <!-- Da fare OFF di default -->
         <label><input type="checkbox" id="chk-non-fatte"> Da Fare</label>
       </div>
     </div>
@@ -119,7 +118,6 @@
       </select>
     </div>
 
-    <!-- DOUBLE SLIDER DISTANZA (Limiti dinamici via JS) -->
     <div class="filter-group">
       <label>Distanza: <span id="val-dist" class="range-val">-</span></label>
       <div class="slider-container">
@@ -129,7 +127,6 @@
       </div>
     </div>
 
-    <!-- DOUBLE SLIDER DISLIVELLO POSITIVO (Limiti dinamici via JS) -->
     <div class="filter-group">
       <label>Dislivello +: <span id="val-dis-pos" class="range-val">-</span></label>
       <div class="slider-container">
@@ -139,7 +136,6 @@
       </div>
     </div>
 
-    <!-- DOUBLE SLIDER DISLIVELLO NEGATIVO (Limiti dinamici via JS) -->
     <div class="filter-group">
       <label>Dislivello -: <span id="val-dis-neg" class="range-val">-</span></label>
       <div class="slider-container">
@@ -185,7 +181,7 @@
 
     <div id="stats">Mostrati: 0 di 0 percorsi</div>
 
-    <!-- LINK ESTERNI SPOSTATI QUI IN FONDO -->
+    <!-- LINK ESTERNI -->
     <div class="ext-links-container">
       <a href="https://github.com/ricettarioditrekking/mappa-trekking/" target="_blank" class="ext-link" style="background:#f1f2f6;">🐙 Repository GitHub ↗</a>
       <a id="link-wikiloc" href="#" target="_blank" class="ext-link">⛰️ Sentieri Community (Wikiloc) ↗</a>
@@ -252,8 +248,9 @@ function aggiornaLinkEsterni() {
   }
   linkWindy.href = `https://www.windy.com/en/-Rain-thunder-rain?rain,${timeParam}${lat},${lng},11,p:cities`;
 
+  // Fix: Outdooractive usa il formato /#map={zoom}/{lat}/{lon}
   const linkOA = document.getElementById('link-outdooractive');
-  linkOA.href = `https://www.outdooractive.com/en/routes/#z=${map.getZoom()}&center=${lat},${lng}`;
+  linkOA.href = `https://www.outdooractive.com/en/routes/#map=${map.getZoom()}/${lat}/${lng}`;
 
   const linkWiki = document.getElementById('link-wikiloc');
   const sw = bounds.getSouthWest();
@@ -328,7 +325,8 @@ function onEachFeature(feature, layer) {
   });
 
   layer.on('mouseout', function() {
-    layer.setStyle({ weight: 4, opacity: 0.95 });
+    // Ripristina lo spessore originario: 4 se fatto, 5 se puntinato
+    layer.setStyle({ weight: (feature.properties.stato === 'fatta') ? 4 : 5, opacity: 0.95 });
   });
 
   layer.on('click', function() {
@@ -493,7 +491,7 @@ function abilitaDoppioSlider(minId, maxId, displayId, unit) {
     }
     
     displayEl.textContent = `${minVal} - ${maxVal} ${unit}`;
-    applyFilters();
+    applyFilters(true); // Passo 'true' per indicare che è stata un'azione utente
   }
   
   minEl.addEventListener('input', update);
@@ -504,7 +502,6 @@ abilitaDoppioSlider('filter-dist-min', 'filter-dist-max', 'val-dist', 'km');
 abilitaDoppioSlider('filter-dis-pos-min', 'filter-dis-pos-max', 'val-dis-pos', 'm');
 abilitaDoppioSlider('filter-dis-neg-min', 'filter-dis-neg-max', 'val-dis-neg', 'm');
 
-// CONFIGURAZIONE DINAMICA LIMITI SLIDER DAI DATI GEOJSON
 function impostaLimitiSliderDinamici(data) {
   if (!data.features || data.features.length === 0) return;
 
@@ -527,13 +524,10 @@ function impostaLimitiSliderDinamici(data) {
     if (neg > maxDisNeg) maxDisNeg = neg;
   });
 
-  // Arrotondamento pulito per UI
   minKm = Math.floor(minKm !== Infinity ? minKm : 0);
   maxKm = Math.ceil(maxKm !== -Infinity ? maxKm : 50);
-
   minDisPos = Math.floor((minDisPos !== Infinity ? minDisPos : 0) / 10) * 10;
   maxDisPos = Math.ceil((maxDisPos !== -Infinity ? maxDisPos : 2500) / 10) * 10;
-
   minDisNeg = Math.floor((minDisNeg !== Infinity ? minDisNeg : 0) / 10) * 10;
   maxDisNeg = Math.ceil((maxDisNeg !== -Infinity ? maxDisNeg : 2500) / 10) * 10;
 
@@ -550,7 +544,7 @@ function impostaLimitiSliderDinamici(data) {
   setBounds('filter-dis-neg-min', 'filter-dis-neg-max', 'val-dis-neg', minDisNeg, maxDisNeg, 'm');
 }
 
-function applyFilters() {
+function applyFilters(isUserEvent = false) {
   if (!allData) return;
 
   const diffVal = document.getElementById('filter-difficolta').value;
@@ -580,16 +574,25 @@ function applyFilters() {
 
   if (geoJsonLayer) map.removeLayer(geoJsonLayer);
 
+  // LOGICA AVVISO METEO AL CAMBIO FILTRI
+  const hadMeteo = meteoLabelsLayer.getLayers().length > 0;
+  if (hadMeteo && isUserEvent) {
+    document.getElementById('risultato-meteo-stato').innerHTML = "Filtri modificati. Premi su 'Calcola Meteo' per aggiornare l'area.";
+  } else if (!isUserEvent) {
+    document.getElementById('risultato-meteo-stato').innerHTML = "";
+  }
+  meteoLabelsLayer.clearLayers();
+
   geoJsonLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
     style: function(feature) {
       const isFatta = feature.properties.stato === 'fatta';
       return {
         color: getNeonColor(feature.properties.difficolta),
-        weight: 4,
+        weight: isFatta ? 4 : 5,
         opacity: 0.95,
-        // TRATTEGGIO CORRETTO: Tratto breve (2px) e spaziatura ampia (12px) per renderlo visibile da lontano
-        dashArray: isFatta ? null : '2, 12', 
-        lineCap: 'butt',
+        // Dotted line per i "Da fare": linea di 1px con spazio vuoto di 12px, arrotondata!
+        dashArray: isFatta ? null : '1, 12', 
+        lineCap: isFatta ? 'butt' : 'round',
         lineJoin: 'round'
       };
     },
@@ -597,13 +600,10 @@ function applyFilters() {
   }).addTo(map);
 
   document.getElementById('stats').textContent = `Mostrati: ${filteredFeatures.length} di ${allData.features.length} percorsi`;
-  
-  meteoLabelsLayer.clearLayers();
-  document.getElementById('risultato-meteo-stato').innerHTML = "";
 }
 
 document.querySelectorAll('select, input[type="checkbox"]').forEach(el => {
-  if(el.id !== 'chk-autoupdate-meteo') el.addEventListener('change', applyFilters);
+  if(el.id !== 'chk-autoupdate-meteo') el.addEventListener('change', () => applyFilters(true));
 });
 
 document.getElementById('btn-meteo-globale').addEventListener('click', generaBadgeMeteoVisibili);
@@ -614,8 +614,10 @@ document.getElementById('btn-nascondi-badge').addEventListener('click', () => {
 });
 
 document.getElementById('data-partenza').addEventListener('change', () => {
-  meteoLabelsLayer.clearLayers();
-  document.getElementById('risultato-meteo-stato').innerHTML = "Data modificata. Ricalcola il meteo in mappa.";
+  if (meteoLabelsLayer.getLayers().length > 0) {
+    meteoLabelsLayer.clearLayers();
+    document.getElementById('risultato-meteo-stato').innerHTML = "Data modificata. Ricalcola il meteo in mappa.";
+  }
   aggiornaLinkEsterni();
 });
 
@@ -627,7 +629,7 @@ map.on('moveend', function() {
   aggiornaLinkEsterni();
 });
 
-// LOAD DATA E IMPOSTAZIONE LIMITI REALI
+// LOAD DATA
 fetch('percorsi.geojson?v=' + new Date().getTime())
   .then(response => response.json())
   .then(data => {
