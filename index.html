@@ -30,12 +30,8 @@
   #sidebar.collapsed + #toggle-sidebar-btn { left: 15px; }
   #toggle-sidebar-btn:hover { background: #1a252f; }
 
-  #sidebar h2 { margin-top: 0; font-size: 1.2rem; margin-bottom: 8px; }
+  #sidebar h2 { margin-top: 0; font-size: 1.2rem; margin-bottom: 12px; }
   
-  .ext-links-container { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
-  .ext-link { font-size: 0.8rem; color: #2c3e50; font-weight: bold; text-decoration: none; display: block; padding: 6px; background: #eef2f5; border-radius: 4px; border: 1px solid #dcdde1; text-align: center; transition: background 0.2s; }
-  .ext-link:hover { background: #dfe6e9; }
-
   .filter-group { margin-bottom: 18px; }
   .filter-group label { display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 6px; }
   .filter-group select { width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ccc; }
@@ -52,7 +48,7 @@
   .slider-container input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #2c3e50; cursor: pointer; pointer-events: auto; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
   .slider-container input[type="range"]::-moz-range-thumb { height: 18px; width: 18px; border-radius: 50%; background: #2c3e50; cursor: pointer; pointer-events: auto; border: none; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
 
-  #stats { font-style: italic; color: #777; font-size: 0.85rem; margin-top: 25px; }
+  #stats { font-style: italic; color: #777; font-size: 0.85rem; margin-top: 15px; margin-bottom: 15px; }
   #map { width: 100%; height: 100%; z-index: 1; }
   
   .leaflet-interactive { filter: drop-shadow(0px 0px 3px currentColor); transition: stroke-width 0.15s ease; }
@@ -83,7 +79,12 @@
   #risultato-meteo-stato { font-size: 0.8rem; font-weight: bold; color: #d35400; margin-bottom: 6px; }
   #risultato-meteo { margin-bottom: 10px; font-size: 0.85rem; color: #444; border: 1px solid #eee; padding: 6px; border-radius: 4px; background: #fff; min-height: 40px; }
 
-  .disclaimer-box { margin-top: 12px; padding: 8px; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; font-size: 0.75rem; color: #856404; line-height: 1.3; }
+  .disclaimer-box { margin-top: 12px; margin-bottom: 15px; padding: 8px; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; font-size: 0.75rem; color: #856404; line-height: 1.3; }
+
+  /* LINK ESTERNI SPOSTATI IN FONDO */
+  .ext-links-container { display: flex; flex-direction: column; gap: 6px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd; }
+  .ext-link { font-size: 0.8rem; color: #2c3e50; font-weight: bold; text-decoration: none; display: block; padding: 6px; background: #eef2f5; border-radius: 4px; border: 1px solid #dcdde1; text-align: center; transition: background 0.2s; }
+  .ext-link:hover { background: #dfe6e9; }
 
   @media (max-width: 768px) {
     #sidebar { width: 280px; }
@@ -98,17 +99,12 @@
   <div id="sidebar">
     <h2>Filtri Percorsi</h2>
     
-    <div class="ext-links-container">
-      <a href="https://github.com/ricettarioditrekking/mappa-trekking/" target="_blank" class="ext-link" style="background:#f1f2f6;">🐙 Repository GitHub ↗</a>
-      <a id="link-wikiloc" href="#" target="_blank" class="ext-link">⛰️ Sentieri Community (Wikiloc) ↗</a>
-      <a id="link-outdooractive" href="#" target="_blank" class="ext-link">🥾 Sentieri Ufficiali (Outdooractive) ↗</a>
-    </div>
-    
     <div class="filter-group">
       <label>Stato Percorso:</label>
       <div class="checkbox-group">
         <label><input type="checkbox" id="chk-fatte" checked> Completati</label>
-        <label><input type="checkbox" id="chk-non-fatte" checked> Da Fare</label>
+        <!-- Da fare OFF di default -->
+        <label><input type="checkbox" id="chk-non-fatte"> Da Fare</label>
       </div>
     </div>
 
@@ -123,33 +119,33 @@
       </select>
     </div>
 
-    <!-- DOUBLE SLIDER DISTANZA -->
+    <!-- DOUBLE SLIDER DISTANZA (Limiti dinamici via JS) -->
     <div class="filter-group">
-      <label>Distanza: <span id="val-dist" class="range-val">0 - 50 km</span></label>
+      <label>Distanza: <span id="val-dist" class="range-val">-</span></label>
       <div class="slider-container">
         <div class="slider-track"></div>
-        <input type="range" id="filter-dist-min" min="0" max="50" value="0" step="1">
-        <input type="range" id="filter-dist-max" min="0" max="50" value="50" step="1">
+        <input type="range" id="filter-dist-min" min="0" max="100" value="0" step="1">
+        <input type="range" id="filter-dist-max" min="0" max="100" value="100" step="1">
       </div>
     </div>
 
-    <!-- DOUBLE SLIDER DISLIVELLO POSITIVO -->
+    <!-- DOUBLE SLIDER DISLIVELLO POSITIVO (Limiti dinamici via JS) -->
     <div class="filter-group">
-      <label>Dislivello +: <span id="val-dis-pos" class="range-val">0 - 2500 m</span></label>
+      <label>Dislivello +: <span id="val-dis-pos" class="range-val">-</span></label>
       <div class="slider-container">
         <div class="slider-track"></div>
-        <input type="range" id="filter-dis-pos-min" min="0" max="2500" value="0" step="50">
-        <input type="range" id="filter-dis-pos-max" min="0" max="2500" value="2500" step="50">
+        <input type="range" id="filter-dis-pos-min" min="0" max="3000" value="0" step="10">
+        <input type="range" id="filter-dis-pos-max" min="0" max="3000" value="3000" step="10">
       </div>
     </div>
 
-    <!-- DOUBLE SLIDER DISLIVELLO NEGATIVO -->
+    <!-- DOUBLE SLIDER DISLIVELLO NEGATIVO (Limiti dinamici via JS) -->
     <div class="filter-group">
-      <label>Dislivello -: <span id="val-dis-neg" class="range-val">0 - 2500 m</span></label>
+      <label>Dislivello -: <span id="val-dis-neg" class="range-val">-</span></label>
       <div class="slider-container">
         <div class="slider-track"></div>
-        <input type="range" id="filter-dis-neg-min" min="0" max="2500" value="0" step="50">
-        <input type="range" id="filter-dis-neg-max" min="0" max="2500" value="2500" step="50">
+        <input type="range" id="filter-dis-neg-min" min="0" max="3000" value="0" step="10">
+        <input type="range" id="filter-dis-neg-max" min="0" max="3000" value="3000" step="10">
       </div>
     </div>
 
@@ -177,7 +173,6 @@
         <label><input type="checkbox" id="chk-autoupdate-meteo" checked> Dettaglio orario automatico (hover/click) </label>
       </div>
       
-      <!-- STATUS E DETTAGLIO ORA SEPARATI -->
       <div id="risultato-meteo-stato"></div>
       <div id="risultato-meteo">Nessun tracciato selezionato. Passa col mouse o clicca su un percorso per il meteo.</div>
 
@@ -189,6 +184,13 @@
     </div>
 
     <div id="stats">Mostrati: 0 di 0 percorsi</div>
+
+    <!-- LINK ESTERNI SPOSTATI QUI IN FONDO -->
+    <div class="ext-links-container">
+      <a href="https://github.com/ricettarioditrekking/mappa-trekking/" target="_blank" class="ext-link" style="background:#f1f2f6;">🐙 Repository GitHub ↗</a>
+      <a id="link-wikiloc" href="#" target="_blank" class="ext-link">⛰️ Sentieri Community (Wikiloc) ↗</a>
+      <a id="link-outdooractive" href="#" target="_blank" class="ext-link">🥾 Sentieri Ufficiali (Outdooractive) ↗</a>
+    </div>
   </div>
 
   <button id="toggle-sidebar-btn">✖ Chiudi</button>
@@ -235,14 +237,13 @@ toggleBtn.addEventListener('click', () => {
   setTimeout(() => map.invalidateSize(), 300);
 });
 
-// LOGICA LINK ESTERNI (Windy, Wikiloc, Outdooractive)
+// LOGICA LINK ESTERNI
 function aggiornaLinkEsterni() {
   const center = map.getCenter();
   const bounds = map.getBounds();
   const lat = center.lat.toFixed(4);
   const lng = center.lng.toFixed(4);
   
-  // URL Windy (Data esatta + ore 12:00 locale) -> es: 2026-08-21-12
   const linkWindy = document.getElementById('link-meteo-esterno');
   const dateInputStr = document.getElementById('data-partenza').value;
   let timeParam = '';
@@ -251,11 +252,9 @@ function aggiornaLinkEsterni() {
   }
   linkWindy.href = `https://www.windy.com/en/-Rain-thunder-rain?rain,${timeParam}${lat},${lng},11,p:cities`;
 
-  // URL Outdooractive (Mappa area)
   const linkOA = document.getElementById('link-outdooractive');
   linkOA.href = `https://www.outdooractive.com/en/routes/#z=${map.getZoom()}&center=${lat},${lng}`;
 
-  // URL Wikiloc (Bounding box)
   const linkWiki = document.getElementById('link-wikiloc');
   const sw = bounds.getSouthWest();
   const ne = bounds.getNorthEast();
@@ -320,7 +319,7 @@ function onEachFeature(feature, layer) {
 
   layer.on('mouseover', function(e) {
     selectedLayerForMeteo = layer;
-    layer.setStyle({ weight: 8, opacity: 1 });
+    layer.setStyle({ weight: 7, opacity: 1 });
     if (e.originalEvent && e.originalEvent.pointerType !== 'touch') this.openPopup();
     if (document.getElementById('chk-autoupdate-meteo').checked) {
       clearTimeout(hoverMeteoTimeout);
@@ -329,7 +328,7 @@ function onEachFeature(feature, layer) {
   });
 
   layer.on('mouseout', function() {
-    layer.setStyle({ weight: 5, opacity: 0.95 });
+    layer.setStyle({ weight: 4, opacity: 0.95 });
   });
 
   layer.on('click', function() {
@@ -392,7 +391,7 @@ async function generaBadgeMeteoVisibili() {
   meteoLabelsLayer.clearLayers();
   
   const dateInput = document.getElementById('data-partenza').value;
-  const statusBox = document.getElementById('risultato-meteo-stato'); // Aggiorniamo lo status, NON il dettaglio!
+  const statusBox = document.getElementById('risultato-meteo-stato');
   
   if (!dateInput) return;
 
@@ -486,7 +485,6 @@ function abilitaDoppioSlider(minId, maxId, displayId, unit) {
     let minVal = parseFloat(minEl.value);
     let maxVal = parseFloat(maxEl.value);
     
-    // Evita che si sorpassino: spingi l'altro slider
     if (minVal > maxVal) {
       if (this.id === minId) maxEl.value = minVal;
       else minEl.value = maxVal;
@@ -505,6 +503,52 @@ function abilitaDoppioSlider(minId, maxId, displayId, unit) {
 abilitaDoppioSlider('filter-dist-min', 'filter-dist-max', 'val-dist', 'km');
 abilitaDoppioSlider('filter-dis-pos-min', 'filter-dis-pos-max', 'val-dis-pos', 'm');
 abilitaDoppioSlider('filter-dis-neg-min', 'filter-dis-neg-max', 'val-dis-neg', 'm');
+
+// CONFIGURAZIONE DINAMICA LIMITI SLIDER DAI DATI GEOJSON
+function impostaLimitiSliderDinamici(data) {
+  if (!data.features || data.features.length === 0) return;
+
+  let minKm = Infinity, maxKm = -Infinity;
+  let minDisPos = Infinity, maxDisPos = -Infinity;
+  let minDisNeg = Infinity, maxDisNeg = -Infinity;
+
+  data.features.forEach(f => {
+    const p = f.properties;
+    if (p.km !== undefined) {
+      if (p.km < minKm) minKm = p.km;
+      if (p.km > maxKm) maxKm = p.km;
+    }
+    if (p.dislivello !== undefined) {
+      if (p.dislivello < minDisPos) minDisPos = p.dislivello;
+      if (p.dislivello > maxDisPos) maxDisPos = p.dislivello;
+    }
+    const neg = p.dislivello_neg || 0;
+    if (neg < minDisNeg) minDisNeg = neg;
+    if (neg > maxDisNeg) maxDisNeg = neg;
+  });
+
+  // Arrotondamento pulito per UI
+  minKm = Math.floor(minKm !== Infinity ? minKm : 0);
+  maxKm = Math.ceil(maxKm !== -Infinity ? maxKm : 50);
+
+  minDisPos = Math.floor((minDisPos !== Infinity ? minDisPos : 0) / 10) * 10;
+  maxDisPos = Math.ceil((maxDisPos !== -Infinity ? maxDisPos : 2500) / 10) * 10;
+
+  minDisNeg = Math.floor((minDisNeg !== Infinity ? minDisNeg : 0) / 10) * 10;
+  maxDisNeg = Math.ceil((maxDisNeg !== -Infinity ? maxDisNeg : 2500) / 10) * 10;
+
+  function setBounds(minId, maxId, displayId, minV, maxV, unit) {
+    const minEl = document.getElementById(minId);
+    const maxEl = document.getElementById(maxId);
+    minEl.min = minV; minEl.max = maxV; minEl.value = minV;
+    maxEl.min = minV; maxEl.max = maxV; maxEl.value = maxV;
+    document.getElementById(displayId).textContent = `${minV} - ${maxV} ${unit}`;
+  }
+
+  setBounds('filter-dist-min', 'filter-dist-max', 'val-dist', minKm, maxKm, 'km');
+  setBounds('filter-dis-pos-min', 'filter-dis-pos-max', 'val-dis-pos', minDisPos, maxDisPos, 'm');
+  setBounds('filter-dis-neg-min', 'filter-dis-neg-max', 'val-dis-neg', minDisNeg, maxDisNeg, 'm');
+}
 
 function applyFilters() {
   if (!allData) return;
@@ -541,11 +585,11 @@ function applyFilters() {
       const isFatta = feature.properties.stato === 'fatta';
       return {
         color: getNeonColor(feature.properties.difficolta),
-        weight: 5,
+        weight: 4,
         opacity: 0.95,
-        // Se NON è fatta, applica un tratteggio; altrimenti linea continua null
-        dashArray: isFatta ? null : '8, 8', 
-        lineCap: 'round',
+        // TRATTEGGIO CORRETTO: Tratto breve (2px) e spaziatura ampia (12px) per renderlo visibile da lontano
+        dashArray: isFatta ? null : '2, 12', 
+        lineCap: 'butt',
         lineJoin: 'round'
       };
     },
@@ -575,20 +619,20 @@ document.getElementById('data-partenza').addEventListener('change', () => {
   aggiornaLinkEsterni();
 });
 
-// LOGICA EVENTO SPOSTAMENTO MAPPA E AGGIORNAMENTO LINK
 map.on('moveend', function() {
   const statusBox = document.getElementById('risultato-meteo-stato');
   if (meteoLabelsLayer.getLayers().length > 0) {
     statusBox.innerHTML = "Mappa spostata. Premi su 'Calcola Meteo' per aggiornare l'area visibile.";
   }
-  aggiornaLinkEsterni(); // Aggiorna anche links a wikiloc/outdooractive per la nuova zona
+  aggiornaLinkEsterni();
 });
 
-// LOAD DATA
+// LOAD DATA E IMPOSTAZIONE LIMITI REALI
 fetch('percorsi.geojson?v=' + new Date().getTime())
   .then(response => response.json())
   .then(data => {
     allData = data;
+    impostaLimitiSliderDinamici(data);
     applyFilters();
     if (geoJsonLayer && geoJsonLayer.getBounds().isValid()) {
       map.fitBounds(geoJsonLayer.getBounds(), { padding: [30, 30] });
