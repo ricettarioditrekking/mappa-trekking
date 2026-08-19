@@ -10,7 +10,6 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: Arial, sans-serif; overflow: hidden; }
   
-  /* Layout con Sidebar Collapsible overlay */
   #main-container { position: relative; width: 100%; height: 100%; display: flex; }
 
   #sidebar { 
@@ -41,7 +40,6 @@
   
   .range-val { float: right; font-size: 0.85rem; color: #555; font-weight: normal; }
 
-  /* SLIDER DOPPIO - CSS TRICK */
   .slider-container { position: relative; width: 100%; height: 26px; margin-top: 8px; }
   .slider-track { width: 100%; height: 6px; background: #dcdde1; position: absolute; top: 50%; transform: translateY(-50%); border-radius: 4px; }
   .slider-container input[type="range"] { position: absolute; width: 100%; -webkit-appearance: none; background: transparent; pointer-events: none; top: 50%; transform: translateY(-50%); margin: 0; }
@@ -53,7 +51,6 @@
   
   .leaflet-interactive { filter: drop-shadow(0px 0px 3px currentColor); transition: stroke-width 0.15s ease; }
 
-  /* POPUP A DESTRA */
   .popup-right { margin-bottom: 0 !important; }
   .popup-right .leaflet-popup-tip-container { display: none !important; }
   .popup-right .leaflet-popup-content-wrapper { position: relative; border-radius: 12px; padding: 6px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
@@ -66,7 +63,6 @@
   summary { font-weight: bold; cursor: pointer; color: #222; outline: none; }
   .details-content { margin-top: 8px; color: #444; word-break: break-word; }
 
-  /* BADGE METEO CLICCABILE */
   .meteo-badge { background: rgba(255, 255, 255, 0.95); border: 1px solid #94a3b8; border-radius: 20px; padding: 4px 8px; font-size: 0.85rem; font-weight: bold; color: #1e293b; box-shadow: 0 3px 6px rgba(0,0,0,0.25); white-space: nowrap; text-align: center; transform: translate(-50%, -50%); pointer-events: auto; cursor: pointer; transition: transform 0.15s ease; }
   .meteo-badge:hover { transform: translate(-50%, -50%) scale(1.08); background: #ffffff; }
 
@@ -75,13 +71,11 @@
   .btn-secondary { flex: 1; padding: 8px; background-color: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
   .btn-secondary:hover { background-color: #cbd5e1; }
 
-  /* STATO METEO E DETTAGLIO SEPARATI */
   #risultato-meteo-stato { font-size: 0.8rem; font-weight: bold; color: #d35400; margin-bottom: 6px; }
   #risultato-meteo { margin-bottom: 10px; font-size: 0.85rem; color: #444; border: 1px solid #eee; padding: 6px; border-radius: 4px; background: #fff; min-height: 40px; }
 
   .disclaimer-box { margin-top: 12px; margin-bottom: 15px; padding: 8px; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; font-size: 0.75rem; color: #856404; line-height: 1.3; }
 
-  /* LINK ESTERNI SPOSTATI IN FONDO */
   .ext-links-container { display: flex; flex-direction: column; gap: 6px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd; }
   .ext-link { font-size: 0.8rem; color: #2c3e50; font-weight: bold; text-decoration: none; display: block; padding: 6px; background: #eef2f5; border-radius: 4px; border: 1px solid #dcdde1; text-align: center; transition: background 0.2s; }
   .ext-link:hover { background: #dfe6e9; }
@@ -181,7 +175,6 @@
 
     <div id="stats">Mostrati: 0 di 0 percorsi</div>
 
-    <!-- LINK ESTERNI -->
     <div class="ext-links-container">
       <a href="https://github.com/ricettarioditrekking/mappa-trekking/" target="_blank" class="ext-link" style="background:#f1f2f6;">🐙 Repository GitHub ↗</a>
       <a id="link-wikiloc" href="#" target="_blank" class="ext-link">⛰️ Sentieri Community (Wikiloc) ↗</a>
@@ -195,7 +188,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// IMPOSTAZIONE DATA E CALENDARIO
 const oggi = new Date();
 const maxData = new Date();
 maxData.setDate(oggi.getDate() + 4); 
@@ -212,7 +204,6 @@ let selectedLayerForMeteo = null;
 const trackMeteoCache = new Map();
 let hoverMeteoTimeout = null;
 
-// SETUP MAPPA
 const map = L.map('map', { zoomControl: false }).setView([46.4983, 11.3548], 10);
 L.control.zoom({ position: 'topright' }).addTo(map);
 
@@ -223,7 +214,6 @@ L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
 
 const meteoLabelsLayer = L.layerGroup().addTo(map);
 
-// TOGGLE MENU
 const sidebar = document.getElementById('sidebar');
 const toggleBtn = document.getElementById('toggle-sidebar-btn');
 
@@ -233,12 +223,12 @@ toggleBtn.addEventListener('click', () => {
   setTimeout(() => map.invalidateSize(), 300);
 });
 
-// LOGICA LINK ESTERNI
 function aggiornaLinkEsterni() {
   const center = map.getCenter();
   const bounds = map.getBounds();
   const lat = center.lat.toFixed(4);
   const lng = center.lng.toFixed(4);
+  const zoom = map.getZoom();
   
   const linkWindy = document.getElementById('link-meteo-esterno');
   const dateInputStr = document.getElementById('data-partenza').value;
@@ -246,11 +236,10 @@ function aggiornaLinkEsterni() {
   if (dateInputStr) {
     timeParam = `${dateInputStr}-12,`;
   }
-  linkWindy.href = `https://www.windy.com/en/-Rain-thunder-rain?rain,${timeParam}${lat},${lng},11,p:cities`;
+  linkWindy.href = `https://www.windy.com/en/-Rain-thunder-rain?rain,${timeParam}${lat},${lng},${zoom},p:cities`;
 
-  // Fix: Outdooractive usa il formato /#map={zoom}/{lat}/{lon}
   const linkOA = document.getElementById('link-outdooractive');
-  linkOA.href = `https://www.outdooractive.com/en/routes/#map=${map.getZoom()}/${lat}/${lng}`;
+  linkOA.href = `https://www.outdooractive.com/en/routes/#center=${lat},${lng}&zoom=${zoom}`;
 
   const linkWiki = document.getElementById('link-wikiloc');
   const sw = bounds.getSouthWest();
@@ -301,6 +290,10 @@ function getThreePointsFromLayer(layer) {
 function onEachFeature(feature, layer) {
   const p = feature.properties;
   const isFatta = p.stato === 'fatta';
+
+  const posStr = p.posizione || p.luogo || p.localita || '';
+  const movStr = p.tempo_movimento || p.tempo_in_movimento || '';
+  const ripStr = p.tempo_riposo || p.tempo_pausa || p.tempo_attesa || '';
   
   const popupContent = 
     '<div style="font-size: 1.05rem; font-weight: bold; margin-bottom: 6px; padding-right: 25px; line-height: 1.3;">' + p.name + '</div>' +
@@ -310,7 +303,15 @@ function onEachFeature(feature, layer) {
     'Dislivello: +' + p.dislivello + 'm / -' + (p.dislivello_neg || 0) + 'm<br>' +
     'Tempo totale: ' + (p.tempo_effettivo || p.durata || '') + '<br>' +
     'Difficoltà: ' + p.difficolta +
-    `<details><summary>Maggiori dettagli</summary><div class="details-content"><strong>Stato:</strong> ${isFatta ? 'Completato' : 'Da fare'}<br><strong>Data:</strong> ${p.data_trekking || 'N/D'}</div></details>`;
+    `<details><summary>Maggiori dettagli</summary>` +
+      `<div class="details-content">` +
+        `<strong>Stato:</strong> ${isFatta ? 'Completato' : 'Da fare'}<br>` +
+        (posStr ? `<strong>Posizione:</strong> ${posStr}<br>` : '') +
+        (movStr ? `<strong>Tempo in movimento:</strong> ${movStr}<br>` : '') +
+        (ripStr ? `<strong>Tempo riposo/attesa:</strong> ${ripStr}<br>` : '') +
+        `<strong>Data:</strong> ${p.data_trekking || 'N/D'}` +
+      `</div>` +
+    `</details>`;
 
   layer.bindPopup(popupContent, { className: 'popup-right', minWidth: 285, maxWidth: 285, offset: [168, 31], autoPanPadding: [50, 50] });
 
@@ -325,7 +326,6 @@ function onEachFeature(feature, layer) {
   });
 
   layer.on('mouseout', function() {
-    // Ripristina lo spessore originario: 4 se fatto, 5 se puntinato
     layer.setStyle({ weight: (feature.properties.stato === 'fatta') ? 4 : 5, opacity: 0.95 });
   });
 
@@ -473,7 +473,6 @@ async function generaBadgeMeteoVisibili() {
   }
 }
 
-// LOGICA DOUBLE SLIDER NATIVO
 function abilitaDoppioSlider(minId, maxId, displayId, unit) {
   const minEl = document.getElementById(minId);
   const maxEl = document.getElementById(maxId);
@@ -491,7 +490,7 @@ function abilitaDoppioSlider(minId, maxId, displayId, unit) {
     }
     
     displayEl.textContent = `${minVal} - ${maxVal} ${unit}`;
-    applyFilters(true); // Passo 'true' per indicare che è stata un'azione utente
+    applyFilters(true);
   }
   
   minEl.addEventListener('input', update);
@@ -574,7 +573,6 @@ function applyFilters(isUserEvent = false) {
 
   if (geoJsonLayer) map.removeLayer(geoJsonLayer);
 
-  // LOGICA AVVISO METEO AL CAMBIO FILTRI
   const hadMeteo = meteoLabelsLayer.getLayers().length > 0;
   if (hadMeteo && isUserEvent) {
     document.getElementById('risultato-meteo-stato').innerHTML = "Filtri modificati. Premi su 'Calcola Meteo' per aggiornare l'area.";
@@ -590,7 +588,6 @@ function applyFilters(isUserEvent = false) {
         color: getNeonColor(feature.properties.difficolta),
         weight: isFatta ? 4 : 5,
         opacity: 0.95,
-        // Dotted line per i "Da fare": linea di 1px con spazio vuoto di 12px, arrotondata!
         dashArray: isFatta ? null : '1, 12', 
         lineCap: isFatta ? 'butt' : 'round',
         lineJoin: 'round'
@@ -628,6 +625,9 @@ map.on('moveend', function() {
   }
   aggiornaLinkEsterni();
 });
+
+// Inizializzazione link al caricamento iniziale
+aggiornaLinkEsterni();
 
 // LOAD DATA
 fetch('percorsi.geojson?v=' + new Date().getTime())
