@@ -192,7 +192,7 @@
       
       <div id="risultato-meteo" style="margin-top: 8px; margin-bottom: 10px; font-size: 0.85rem; color: #444; border: 1px solid #eee; padding: 6px; border-radius: 4px; background: #fff;">Passa col mouse su un percorso per il dettaglio orario.</div>
 
-      <a id="link-meteo-esterno" href="#" target="_blank" class="external-meteo-link">🌤️ Vedi Meteo Mappa (Windy) ↗</a>
+      <a id="link-meteo-esterno" href="#" target="_blank" class="external-meteo-link">🌤️ Apri Mappa Pioggia (Windy) ↗</a>
 
       <div class="disclaimer-box">
         ⚠️ <strong>Disclaimer:</strong> Le condizioni meteo in montagna variano rapidamente. Verifica sempre il bollettino meteo ufficiale prima di effettuare qualsiasi tracciato.
@@ -250,18 +250,26 @@ toggleBtn.addEventListener('click', () => {
   setTimeout(() => map.invalidateSize(), 300);
 });
 
-// LINK METEO ESTERNO DINAMICO SU WINDY PER LE COORDINATE CORRENTI
+// LINK METEO ESTERNO DINAMICO SU WINDY: LINGUA INGLESE, RAIN LAYER, DATA SPECIFICA
 function aggiornaLinkMeteoEsterno() {
   const center = map.getCenter();
   const linkElem = document.getElementById('link-meteo-esterno');
   if (linkElem) {
     const lat = center.lat.toFixed(4);
     const lng = center.lng.toFixed(4);
-    linkElem.href = `https://www.windy.com/?${lat},${lng},11`;
+    const dateInputStr = document.getElementById('data-partenza').value;
+    
+    let timeParam = '';
+    if (dateInputStr) {
+      // Trasforma YYYY-MM-DD in YYYYMMDD12 per posizionare Windy alle ore 12:00 di quel giorno
+      const dateStrCompact = dateInputStr.replace(/-/g, '');
+      timeParam = `,p:d${dateStrCompact}12`;
+    }
+    
+    // /en/ = Inglese | -Rain-thunder-rain?rain = Layer Pioggia di default
+    linkElem.href = `https://www.windy.com/en/-Rain-thunder-rain?rain,${lat},${lng},11${timeParam}`;
   }
 }
-map.on('moveend', aggiornaLinkMeteoEsterno);
-aggiornaLinkMeteoEsterno();
 
 function getNeonColor(difficolta) {
   switch (difficolta) {
@@ -542,7 +550,6 @@ async function generaBadgeMeteoVisibili() {
             iconSize: null
           });
           
-          // COMPORTAMENTO AL CLICK SUL BADGE: Popup + Dettaglio orario nel pannello
           const marker = L.marker(center, { icon: icon }).addTo(meteoLabelsLayer);
           marker.on('click', (e) => {
             L.DomEvent.stopPropagation(e);
@@ -627,7 +634,6 @@ document.querySelectorAll('select, input[type="range"], input[type="checkbox"]')
 
 document.getElementById('btn-meteo-globale').addEventListener('click', generaBadgeMeteoVisibili);
 
-// RESET BADGE E TESTO ESPLICITI
 document.getElementById('btn-nascondi-badge').addEventListener('click', () => {
   meteoLabelsLayer.clearLayers();
   document.getElementById('risultato-meteo').innerHTML = "Badge nascosti.";
@@ -636,12 +642,18 @@ document.getElementById('btn-nascondi-badge').addEventListener('click', () => {
 document.getElementById('data-partenza').addEventListener('change', () => {
   meteoLabelsLayer.clearLayers();
   document.getElementById('risultato-meteo').innerHTML = "Data modificata. Clicca su 'Calcola Meteo su Mappa' per aggiornare.";
+  aggiornaLinkMeteoEsterno();
 });
 
+// EVITA LA SOVRASCRITTURA SE C'È IL METEO APERTO (📍) O IN CARICAMENTO
 map.on('moveend', function() {
-  if (meteoLabelsLayer.getLayers().length > 0) {
-    document.getElementById('risultato-meteo').innerHTML = "Mappa spostata. Premi su 'Calcola Meteo su Mappa' per aggiornare l'area visibile.";
+  const statusBox = document.getElementById('risultato-meteo');
+  const hasDetailedWeather = statusBox.innerHTML.includes('📍') || statusBox.innerHTML.includes('Caricamento');
+  
+  if (meteoLabelsLayer.getLayers().length > 0 && !hasDetailedWeather) {
+    statusBox.innerHTML = "Mappa spostata. Premi su 'Calcola Meteo su Mappa' per aggiornare l'area visibile.";
   }
+  aggiornaLinkMeteoEsterno();
 });
 
 fetch('percorsi.geojson?v=' + new Date().getTime())
