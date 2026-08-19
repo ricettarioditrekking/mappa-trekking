@@ -156,7 +156,13 @@ def processa_gpx(file_path):
     else:
         base = os.path.basename(file_path)
         track_name = os.path.splitext(base)[0].replace('_', ' ').replace('-', ' ').title()
-
+    
+    # Estrazione della descrizione
+    desc_elem = root.find('.//{*}trk/{*}desc')
+    track_desc = ""
+    if desc_elem is not None and desc_elem.text:
+        track_desc = desc_elem.text.strip()
+        
     # Link Wikiloc
     wikiloc_link = None
     link_elem = root.find('.//{*}link')
@@ -185,6 +191,7 @@ def processa_gpx(file_path):
         "type": "Feature",
         "properties": {
             "name": track_name,
+            "descrizione": track_desc,
             "km": km,
             "dislivello": dislivello_pos,
             "dislivello_neg": dislivello_neg,
