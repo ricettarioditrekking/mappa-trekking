@@ -5,6 +5,7 @@
       "type": "Feature",
       "properties": {
         "name": "Corno Bianco - Wikiloc",
+        "descrizione": "Percorso da Passo Oclini a Stadt passando per:\n- Corno Bianco (1.7 km)",
         "km": 3.5,
         "dislivello": 317,
         "dislivello_neg": 361,
@@ -1074,6 +1075,7 @@
       "type": "Feature",
       "properties": {
         "name": "Mont Sainte Victoire - Wikiloc",
+        "descrizione": "Saint-Marc-Jaumegarde",
         "km": 10.5,
         "dislivello": 593,
         "dislivello_neg": 592,
@@ -2047,6 +2049,7 @@
       "type": "Feature",
       "properties": {
         "name": "Cascate di Salíma - Wikiloc",
+        "descrizione": "Cascate di Salíma",
         "km": 4.6,
         "dislivello": 31,
         "dislivello_neg": 177,
@@ -2544,6 +2547,7 @@
       "type": "Feature",
       "properties": {
         "name": "Gola di Rastenbach - Wikiloc",
+        "descrizione": "Castelvecchio",
         "km": 2.9,
         "dislivello": 172,
         "dislivello_neg": 186,
@@ -3913,6 +3917,7 @@
       "type": "Feature",
       "properties": {
         "name": "Cima di Col Margherita e Rifugio Laresei da San Pellegrino sul sentiero giallo-blu - Wikiloc",
+        "descrizione": "Percorso da San Pellegrino passando per:\n- Cima di Col Margherita (0.5 km)\n- Rifugio Laresei (4.8 km)",
         "km": 10.7,
         "dislivello": 173,
         "dislivello_neg": 819,
@@ -5874,6 +5879,7 @@
       "type": "Feature",
       "properties": {
         "name": "Cascate di Cavalese - Wikiloc",
+        "descrizione": "Cascate di Cavalese",
         "km": 13.1,
         "dislivello": 115,
         "dislivello_neg": 116,
@@ -6395,6 +6401,7 @@
       "type": "Feature",
       "properties": {
         "name": "Carezza - Catinaccio - Rif. Coronelle - Wikiloc",
+        "descrizione": "Carezza - Catinaccio - Rif. Coronelle",
         "km": 3.5,
         "dislivello": 211,
         "dislivello_neg": 19,
@@ -6992,6 +6999,7 @@
       "type": "Feature",
       "properties": {
         "name": "Rifugio Paolina - Rifugio Coronelle - Carezza - Wikiloc",
+        "descrizione": "Percorso da Rifugio Paolina a Carezza passando per:\n- Monumento Christomannos (0.9 km)\n- Rifugio Fronza alle Coronelle (5.3 km)",
         "km": 12.1,
         "dislivello": 333,
         "dislivello_neg": 728,
@@ -8877,6 +8885,7 @@
       "type": "Feature",
       "properties": {
         "name": "Rifugio Fuciade da Passo San Pellegrino - Wikiloc",
+        "descrizione": "Percorso andata e ritorno, partendo da passo San Pellegrino e arrivando al rifugio Fuciade.\nParcheggio a Passo San Pellegrino o al parcheggio gratuito dell'impianto di Col Margherita.",
         "km": 7.6,
         "dislivello": 120,
         "dislivello_neg": 157,
@@ -10134,6 +10143,7 @@
       "type": "Feature",
       "properties": {
         "name": "Val Venegia - Wikiloc",
+        "descrizione": "Val Venegia",
         "km": 14.1,
         "dislivello": 456,
         "dislivello_neg": 498,
@@ -10931,6 +10941,7 @@
       "type": "Feature",
       "properties": {
         "name": "Giro ad anello del Catinaccio partendo dal Rif. Ciampedie e passando per il Rif. Vajolet e il Rif. Stella Alpina - Wikiloc",
+        "descrizione": "Giro ad anello del Catinaccio partendo dal Rif. Ciampedie e passando per il Rif. Vajolet e il Rif. Stella Alpina.",
         "km": 12.0,
         "dislivello": 531,
         "dislivello_neg": 532,
@@ -12068,6 +12079,7 @@
       "type": "Feature",
       "properties": {
         "name": "Calcata - Wikiloc",
+        "descrizione": "Calcata",
         "km": 6.2,
         "dislivello": 210,
         "dislivello_neg": 211,
@@ -12769,6 +12781,7 @@
       "type": "Feature",
       "properties": {
         "name": "Sentiero di Federico Augusto di Sassonia - Wikiloc",
+        "descrizione": "Sentiero di Federico Augusto di Sassonia",
         "km": 10.2,
         "dislivello": 282,
         "dislivello_neg": 265,
@@ -13502,6 +13515,7 @@
       "type": "Feature",
       "properties": {
         "name": "Viel del Pan con ascesa al Sasso Cappello - Wikiloc",
+        "descrizione": "Sasso Cappello",
         "km": 6.7,
         "dislivello": 182,
         "dislivello_neg": 141,
@@ -14039,6 +14053,7 @@
       "type": "Feature",
       "properties": {
         "name": "Da lago d'Antorno al rifugio Bosi, monte Piana e Piano ~ Mus... - Wikiloc",
+        "descrizione": "",
         "km": 12.8,
         "dislivello": 499,
         "dislivello_neg": 505,
