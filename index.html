@@ -51,6 +51,7 @@
   
   .leaflet-interactive { filter: drop-shadow(0px 0px 3px currentColor); transition: stroke-width 0.15s ease; }
 
+  /* Popup styles */
   .popup-right { margin-bottom: 0 !important; }
   .popup-right .leaflet-popup-tip-container { display: none !important; }
   .popup-right .leaflet-popup-content-wrapper { position: relative; border-radius: 12px; padding: 6px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
@@ -59,10 +60,18 @@
   .popup-right .leaflet-popup-close-button { top: 10px !important; right: 10px !important; width: 26px !important; height: 26px !important; line-height: 26px !important; text-align: center !important; font-size: 16px !important; font-weight: bold; color: #555 !important; background: #ffffff !important; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10; text-decoration: none; transition: all 0.2s ease; }
   .popup-right .leaflet-popup-close-button:hover { color: #000 !important; background: #f4f4f4 !important; transform: scale(1.05); }
 
+  /* Dettagli nel popup */
   details { margin-top: 12px; background: #f7f7f7; padding: 8px 10px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #eaeaea; }
   summary { font-weight: bold; cursor: pointer; color: #222; outline: none; }
   .details-content { margin-top: 8px; color: #444; word-break: break-word; }
 
+  /* Elementi della Legenda */
+  .info.legend { background: rgba(255, 255, 255, 0.95); padding: 8px 12px; font-size: 0.85rem; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); color: #333; line-height: 1.6; }
+  .info.legend strong { display: block; margin-bottom: 6px; font-size: 0.9rem; }
+  .info.legend i { width: 14px; height: 14px; float: left; margin-top: 4px; margin-right: 8px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.2); }
+  .tooltip-icon { cursor: help; font-size: 1rem; margin-left: 4px; vertical-align: middle; }
+
+  /* Meteo */
   .meteo-badge { background: rgba(255, 255, 255, 0.95); border: 1px solid #94a3b8; border-radius: 20px; padding: 4px 8px; font-size: 0.85rem; font-weight: bold; color: #1e293b; box-shadow: 0 3px 6px rgba(0,0,0,0.25); white-space: nowrap; text-align: center; transform: translate(-50%, -50%); pointer-events: auto; cursor: pointer; transition: transform 0.15s ease; }
   .meteo-badge:hover { transform: translate(-50%, -50%) scale(1.08); background: #ffffff; }
 
@@ -76,6 +85,7 @@
 
   .disclaimer-box { margin-top: 12px; margin-bottom: 15px; padding: 8px; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; font-size: 0.75rem; color: #856404; line-height: 1.3; }
 
+  /* Links esterni */
   .ext-links-container { display: flex; flex-direction: column; gap: 6px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd; }
   .ext-link { font-size: 0.8rem; color: #2c3e50; font-weight: bold; text-decoration: none; display: block; padding: 6px; background: #eef2f5; border-radius: 4px; border: 1px solid #dcdde1; text-align: center; transition: background 0.2s; }
   .ext-link:hover { background: #dfe6e9; }
@@ -101,8 +111,12 @@
       </div>
     </div>
 
+    <!-- Modifica 1: Tooltip sulla difficoltà aggiunto tramite l'attributo title -->
     <div class="filter-group">
-      <label for="filter-difficolta">Difficoltà:</label>
+      <label for="filter-difficolta">
+        Difficoltà: 
+        <span class="tooltip-icon" title="Facile: Adatto a tutti, dislivello minimo.&#10;Media: Richiede allenamento moderato.&#10;Difficile: Escursionisti Esperti (EE), dislivello impegnativo.&#10;Molto Difficile: Tratti esposti o attrezzati (EEA), passaggi alpinistici.">ℹ️</span>
+      </label>
       <select id="filter-difficolta">
         <option value="Tutte">Tutte</option>
         <option value="Facile">Facile</option>
@@ -188,6 +202,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+// --- Configurazione Date per il Meteo ---
 const oggi = new Date();
 const maxData = new Date();
 maxData.setDate(oggi.getDate() + 4); 
@@ -204,6 +219,7 @@ let selectedLayerForMeteo = null;
 const trackMeteoCache = new Map();
 let hoverMeteoTimeout = null;
 
+// --- Inizializzazione Mappa ---
 const map = L.map('map', { zoomControl: false }).setView([46.4983, 11.3548], 10);
 L.control.zoom({ position: 'topright' }).addTo(map);
 
@@ -212,8 +228,25 @@ L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
   attribution: 'Map data: © OSM, SRTM | Map style: © OpenTopoMap (CC-BY-SA)'
 }).addTo(map);
 
+// Modifica 2: Aggiunta del Controllo Legenda Difficoltà sulla mappa
+const legend = L.control({position: 'bottomright'});
+legend.onAdd = function (map) {
+  const div = L.DomUtil.create('div', 'info legend');
+  const grades = ['Facile', 'Media', 'Difficile', 'Molto Difficile'];
+  const colors = ['#00FF66', '#00E5FF', '#FF5F00', '#FF007F'];
+  
+  div.innerHTML = '<strong>Livelli di Difficoltà</strong>';
+  for (let i = 0; i < grades.length; i++) {
+    div.innerHTML +=
+      '<div><i style="background:' + colors[i] + '"></i> ' + grades[i] + '</div>';
+  }
+  return div;
+};
+legend.addTo(map);
+
 const meteoLabelsLayer = L.layerGroup().addTo(map);
 
+// --- Gestione Sidebar ---
 const sidebar = document.getElementById('sidebar');
 const toggleBtn = document.getElementById('toggle-sidebar-btn');
 
@@ -223,6 +256,7 @@ toggleBtn.addEventListener('click', () => {
   setTimeout(() => map.invalidateSize(), 300);
 });
 
+// --- Aggiornamento Link Esterni (Wikiloc, Outdooractive, Windy) ---
 function aggiornaLinkEsterni() {
   const center = map.getCenter();
   const bounds = map.getBounds();
@@ -247,6 +281,7 @@ function aggiornaLinkEsterni() {
   linkWiki.href = `https://www.wikiloc.com/wikiloc/map.do?sw=${sw.lat.toFixed(4)},${sw.lng.toFixed(4)}&ne=${ne.lat.toFixed(4)},${ne.lng.toFixed(4)}`;
 }
 
+// --- Colori e Stile Tracciati ---
 function getNeonColor(difficolta) {
   switch (difficolta) {
     case 'Facile': return '#00FF66';
@@ -257,6 +292,7 @@ function getNeonColor(difficolta) {
   }
 }
 
+// --- Funzioni Meteo (Emoji e API) ---
 function getMeteoEmoji(weatherCode) {
   switch (weatherCode) {
     case 0: return '☀️';
@@ -287,6 +323,7 @@ function getThreePointsFromLayer(layer) {
   return [latlngs[0], latlngs[Math.floor(latlngs.length / 2)], latlngs[latlngs.length - 1]];
 }
 
+// --- Creazione Pop-up dei Tracciati ---
 function onEachFeature(feature, layer) {
   const p = feature.properties;
   const isFatta = p.stato === 'fatta';
@@ -295,6 +332,7 @@ function onEachFeature(feature, layer) {
   const movStr = p.tempo_movimento || p.tempo_in_movimento || '';
   const ripStr = p.tempo_riposo || p.tempo_pausa || p.tempo_attesa || '';
   
+  // Il blocco per il popup (mantenuta l'aggiunta di descrizione e file_location)
   const popupContent = 
     '<div style="font-size: 1.05rem; font-weight: bold; margin-bottom: 6px; padding-right: 25px; line-height: 1.3;">' + p.name + '</div>' +
     (p.link ? '<div style="margin-top: 4px; margin-bottom: 10px;"><a href="' + p.link + '" target="_blank" style="color: #27ae60; font-weight: bold; text-decoration: none; font-size: 0.85rem;">Vedi su Wikiloc ↗</a></div>' : '') +
@@ -309,7 +347,9 @@ function onEachFeature(feature, layer) {
         (posStr ? `<strong>Posizione:</strong> ${posStr}<br>` : '') +
         (movStr ? `<strong>Tempo in movimento:</strong> ${movStr}<br>` : '') +
         (ripStr ? `<strong>Tempo riposo/attesa:</strong> ${ripStr}<br>` : '') +
-        `<strong>Data:</strong> ${p.data_trekking || 'N/D'}` +
+        `<strong>Data:</strong> ${p.data_trekking || 'N/D'}<br>` +
+        (p.descrizione ? `<strong style="display:block; margin-top:6px;">Descrizione:</strong><span style="font-size: 0.85rem; color: #555;">${p.descrizione}</span><br>` : '') +
+        (p.file_location ? `<strong style="display:block; margin-top:6px;">File GPX:</strong><span style="font-family: monospace; font-size: 0.75rem; word-break: break-all; background: #eee; padding: 2px 4px; border-radius: 3px; display: inline-block; margin-top: 2px;">${p.file_location}</span>` : '') +
       `</div>` +
     `</details>`;
 
@@ -335,6 +375,7 @@ function onEachFeature(feature, layer) {
   });
 }
 
+// --- Caricamento API Meteo Traccia Singola ---
 async function caricaMeteoTracciaSingola() {
   const container = document.getElementById('risultato-meteo');
   if (!selectedLayerForMeteo) return;
@@ -362,6 +403,7 @@ async function caricaMeteoTracciaSingola() {
   }
 }
 
+// --- Rendering Meteo Singola Traccia (Sidebar) ---
 function renderMeteoSingolo(data, nomePercorso, dataInput) {
   const container = document.getElementById('risultato-meteo');
   const indexInizio = data.hourly.time.findIndex(t => t.startsWith(`${dataInput}T08:00`));
@@ -384,6 +426,7 @@ function renderMeteoSingolo(data, nomePercorso, dataInput) {
   }
 }
 
+// --- Generazione Badge Meteo su Mappa (Globali) ---
 async function generaBadgeMeteoVisibili() {
   if (!geoJsonLayer) return;
   meteoLabelsLayer.clearLayers();
@@ -473,6 +516,7 @@ async function generaBadgeMeteoVisibili() {
   }
 }
 
+// --- Gestione Sliders Multipli ---
 function abilitaDoppioSlider(minId, maxId, displayId, unit) {
   const minEl = document.getElementById(minId);
   const maxEl = document.getElementById(maxId);
@@ -543,6 +587,7 @@ function impostaLimitiSliderDinamici(data) {
   setBounds('filter-dis-neg-min', 'filter-dis-neg-max', 'val-dis-neg', minDisNeg, maxDisNeg, 'm');
 }
 
+// --- Applicazione Filtri sulla Mappa ---
 function applyFilters(isUserEvent = false) {
   if (!allData) return;
 
@@ -599,6 +644,7 @@ function applyFilters(isUserEvent = false) {
   document.getElementById('stats').textContent = `Mostrati: ${filteredFeatures.length} di ${allData.features.length} percorsi`;
 }
 
+// --- Event Listeners UI ---
 document.querySelectorAll('select, input[type="checkbox"]').forEach(el => {
   if(el.id !== 'chk-autoupdate-meteo') el.addEventListener('change', () => applyFilters(true));
 });
@@ -629,7 +675,7 @@ map.on('moveend', function() {
 // Inizializzazione link al caricamento iniziale
 aggiornaLinkEsterni();
 
-// LOAD DATA
+// --- Fetch dei Dati GeoJSON ---
 fetch('percorsi.geojson?v=' + new Date().getTime())
   .then(response => response.json())
   .then(data => {
