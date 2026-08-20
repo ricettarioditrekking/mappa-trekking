@@ -138,7 +138,7 @@ def processa_gpx(file_path):
         tempo_testo = f"~{est_hours} ore"
         durata_cat = "Mezza Giornata" if est_hours <= 4.0 else "Giornata Intera"
 
-    effort_score = round(km + 2.5*(dislivello_pos / 100.0), 1)
+    effort_score = round(km + 2*(dislivello_pos / 100.0), 1)
 
     if effort_score < 12:
         difficolta = "Facile"
