@@ -153,17 +153,16 @@
               <line x1="30" y1="170" x2="260" y2="170" stroke="#aaa" stroke-width="1"/>
               <line x1="30" y1="10" x2="30" y2="170" stroke="#aaa" stroke-width="1"/>
               
-              <!-- Aree di Difficoltà ricalcolate per 1000m max -->
-              <polygon points="30,170 85,170 30,10" fill="rgba(0, 255, 102, 0.2)"/>
-              <polygon points="85,170 140,170 85,10 30,10" fill="rgba(0, 229, 255, 0.2)"/>
-              <polygon points="140,170 195,170 140,10 85,10" fill="rgba(255, 95, 0, 0.2)"/>
-              <polygon points="195,170 250,170 250,10 140,10" fill="rgba(255, 0, 127, 0.2)"/>
+              <!-- Aree di Difficoltà per le soglie 12, 22, 32 -->
+              <polygon points="30,170 96,170 41,10 30,10" fill="rgba(0, 255, 102, 0.2)"/>
+              <polygon points="96,170 151,170 96,10 41,10" fill="rgba(0, 229, 255, 0.2)"/>
+              <polygon points="151,170 206,170 151,10 96,10" fill="rgba(255, 95, 0, 0.2)"/>
+              <polygon points="206,170 250,170 250,10 151,10" fill="rgba(255, 0, 127, 0.2)"/>
               
-              <!-- Linee di demarcazione (Score) con pendenze reali -->
-              <line x1="30" y1="10" x2="85" y2="170" stroke="#00FF66" stroke-width="2"/>
-              <line x1="85" y1="10" x2="140" y2="170" stroke="#00E5FF" stroke-width="2"/>
-              <line x1="140" y1="10" x2="195" y2="170" stroke="#FF5F00" stroke-width="2"/>
-              <line x1="195" y1="10" x2="250" y2="170" stroke="#FF007F" stroke-width="2"/>
+              <!-- Linee di demarcazione (Score 12, 22, 32) -->
+              <line x1="41" y1="10" x2="96" y2="170" stroke="#00FF66" stroke-width="2"/>
+              <line x1="96" y1="10" x2="151" y2="170" stroke="#00E5FF" stroke-width="2"/>
+              <line x1="151" y1="10" x2="206" y2="170" stroke="#FF5F00" stroke-width="2"/>
               
               <!-- Labels Asse Y in centinaia di metri -->
               <text x="25" y="174" font-size="10" fill="#555" text-anchor="end">0</text>
@@ -180,18 +179,17 @@
               <text x="250" y="185" font-size="10" fill="#555" text-anchor="middle">40</text>
               <text x="140" y="200" font-size="11" fill="#333" text-anchor="middle">Distanza (km)</text>
               
-              <!-- Etichette degli Effort Score inclinate in parallelo alla nuova pendenza -->
-              <text x="53" y="100" font-size="10" font-weight="bold" fill="#006622" transform="rotate(71 53,100)" text-anchor="middle">Score 10</text>
-              <text x="108" y="100" font-size="10" font-weight="bold" fill="#006677" transform="rotate(71 108,100)" text-anchor="middle">Score 20</text>
-              <text x="163" y="100" font-size="10" font-weight="bold" fill="#aa4400" transform="rotate(71 163,100)" text-anchor="middle">Score 30</text>
-              <text x="218" y="100" font-size="10" font-weight="bold" fill="#99004d" transform="rotate(71 218,100)" text-anchor="middle">Score 40</text>
+              <!-- Etichette degli Effort Score aggiornate -->
+              <text x="68" y="95" font-size="10" font-weight="bold" fill="#006622" transform="rotate(71 68,95)" text-anchor="middle">Score 12</text>
+              <text x="123" y="95" font-size="10" font-weight="bold" fill="#006677" transform="rotate(71 123,95)" text-anchor="middle">Score 22</text>
+              <text x="178" y="95" font-size="10" font-weight="bold" fill="#aa4400" transform="rotate(71 178,95)" text-anchor="middle">Score 32</text>
             </svg>
 
             <div style="font-size: 0.75rem; margin-top: 10px; line-height: 1.4;">
-              <span style="color:#00cc55; font-weight:bold;">Facile</span> (&lt;10) &nbsp;|&nbsp; 
-              <span style="color:#00aacc; font-weight:bold;">Media</span> (10-20) <br>
-              <span style="color:#e65500; font-weight:bold;">Difficile</span> (20-30) &nbsp;|&nbsp; 
-              <span style="color:#e60073; font-weight:bold;">Molto Difficile</span> (&gt;30)
+              <span style="color:#00cc55; font-weight:bold;">Facile</span> (&lt;12) &nbsp;|&nbsp; 
+              <span style="color:#00aacc; font-weight:bold;">Media</span> (12-22) <br>
+              <span style="color:#e65500; font-weight:bold;">Difficile</span> (22-32) &nbsp;|&nbsp; 
+              <span style="color:#e60073; font-weight:bold;">Molto Difficile</span> (&gt;32)
             </div>
           </div>
         </span>
