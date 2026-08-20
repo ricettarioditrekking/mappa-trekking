@@ -915,9 +915,9 @@ function aggiornaGraficoDrawer() {
       // Spessisci linea tracciato in mappa
       layer.setStyle({ weight: 8, opacity: 1 });
 
-      // Centra mappa sul tracciato e apri popup nativo riducendo lo zoom
+      // Centra mappa sul tracciato e apri popup nativo
       if (layer.getBounds && layer.getBounds().isValid()) {
-        map.fitBounds(layer.getBounds(), { padding: [100, 100], maxZoom: 12 });
+        map.fitBounds(layer.getBounds(), { padding: [50, 50] });
       }
       layer.openPopup();
       selectedLayerForMeteo = layer;
