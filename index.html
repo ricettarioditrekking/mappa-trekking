@@ -310,7 +310,7 @@ L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
 const legend = L.control({position: 'bottomright'});
 legend.onAdd = function (map) {
   const div = L.DomUtil.create('div', 'info legend');
-  const grades = ['Facile', 'Media', 'Difficile', 'Molto Difficile'];
+  const grades = ['Facile (<12)', 'Media (12-22)', 'Difficile (22-32)', 'Molto Difficile (>32)'];
   const colors = ['#00FF66', '#00E5FF', '#FF5F00', '#FF007F'];
   
   div.innerHTML = '<strong>Livelli di Difficoltà</strong>';
