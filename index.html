@@ -345,7 +345,7 @@ function aggiornaLinkEsterni() {
   
   const linkWindy = document.getElementById('link-meteo-esterno');
   // Modificato: Radar di Windy, molto più istantaneo per la pioggia in tempo reale
-  linkWindy.href = `https://www.windy.com/it/-Radar-meteo-radar?radar,${timeParam}${lat},${lng},${zoom},p:cities`;
+  linkWindy.href = `https://www.windy.com/-Weather-radar-radar?radar,${lat},${lng},${zoom}`;
 
   const linkOA = document.getElementById('link-outdooractive');
   linkOA.href = `https://www.outdooractive.com/en/routes/#center=${lat},${lng}&zoom=${zoom}`;
