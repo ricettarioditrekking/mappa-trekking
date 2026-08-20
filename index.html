@@ -31,7 +31,6 @@
 
   #sidebar h2 { margin-top: 0; font-size: 1.2rem; margin-bottom: 12px; }
   
-  /* L'ancoraggio per il tooltip ora è l'intero blocco del filtro */
   .filter-group { margin-bottom: 18px; position: relative; }
   .filter-group label { display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 6px; }
   .filter-group select { width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ccc; }
@@ -76,7 +75,7 @@
   .tooltip-icon { font-size: 1.05rem; vertical-align: middle; }
   .custom-tooltip {
     visibility: hidden;
-    width: 100%; /* Si allarga a tutta la larghezza del gruppo filtro (evita il taglio) */
+    width: 100%;
     box-sizing: border-box;
     background-color: #ffffff;
     color: #333;
@@ -85,7 +84,7 @@
     padding: 10px;
     position: absolute;
     z-index: 9999;
-    top: 30px; /* Scende sotto l'etichetta invece di andare a destra */
+    top: 30px;
     left: 0; 
     box-shadow: 0 4px 18px rgba(0,0,0,0.25);
     opacity: 0;
@@ -117,6 +116,48 @@
   .ext-link { font-size: 0.8rem; color: #2c3e50; font-weight: bold; text-decoration: none; display: block; padding: 6px; background: #eef2f5; border-radius: 4px; border: 1px solid #dcdde1; text-align: center; transition: background 0.2s; }
   .ext-link:hover { background: #dfe6e9; }
 
+  /* Bottom Drawer */
+  #bottom-drawer {
+    position: absolute;
+    bottom: -275px; /* Nascosto di default */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 650px;
+    height: 270px;
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid #cbd5e1;
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
+    z-index: 1000;
+    transition: bottom 0.3s ease;
+    padding: 10px 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #bottom-drawer.open {
+    bottom: 0;
+  }
+  #drawer-toggle-btn {
+    position: absolute;
+    top: -34px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2c3e50;
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.85rem;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+    transition: background 0.2s;
+  }
+  #drawer-toggle-btn:hover { background: #1a252f; }
+
   @media (max-width: 768px) {
     #sidebar { width: 280px; }
     #sidebar.collapsed { transform: translateX(-280px); }
@@ -138,7 +179,6 @@
       </div>
     </div>
 
-    <!-- Modifica sostanziale: Tooltip corretto nei bordi e asse Y calcolato con valori da 250 a 1000m -->
     <div class="filter-group">
       <label for="filter-difficolta" style="display: flex; align-items: center;">
         Difficoltà: 
@@ -149,31 +189,30 @@
             <div class="tooltip-formula">Score = Distanza (km) + 2 × <span style="white-space:nowrap">(Dislivello+ (m) / 100)</span></div>
             
             <svg class="tooltip-chart" viewBox="0 0 270 205" width="100%" height="auto">
-              <!-- Assi (spostati a x=45 per lasciare spazio a sinistra) -->
+              <!-- Assi -->
               <line x1="45" y1="170" x2="260" y2="170" stroke="#aaa" stroke-width="1"/>
               <line x1="45" y1="10" x2="45" y2="170" stroke="#aaa" stroke-width="1"/>
               
-              <!-- Aree di Difficoltà ricalcolate sul nuovo asse -->
+              <!-- Aree di Difficoltà -->
               <polygon points="45,170 110,170 45,74" fill="rgba(0, 255, 102, 0.2)"/>
               <polygon points="110,170 163,170 56,10 45,10 45,74" fill="rgba(0, 229, 255, 0.2)"/>
               <polygon points="163,170 217,170 110,10 56,10" fill="rgba(255, 95, 0, 0.2)"/>
               <polygon points="217,170 260,170 260,10 110,10" fill="rgba(255, 0, 127, 0.2)"/>
               
-              <!-- Linee di demarcazione (Score 12, 22, 32) -->
+              <!-- Linee di demarcazione -->
               <line x1="45" y1="74" x2="110" y2="170" stroke="#00FF66" stroke-width="2"/>
               <line x1="56" y1="10" x2="163" y2="170" stroke="#00E5FF" stroke-width="2"/>
               <line x1="110" y1="10" x2="217" y2="170" stroke="#FF5F00" stroke-width="2"/>
               
-              <!-- Labels Asse Y in centinaia di metri -->
+              <!-- Labels Asse Y -->
               <text x="40" y="174" font-size="10" fill="#555" text-anchor="end">0</text>
               <text x="40" y="134" font-size="10" fill="#555" text-anchor="end">250</text>
               <text x="40" y="94" font-size="10" fill="#555" text-anchor="end">500</text>
               <text x="40" y="54" font-size="10" fill="#555" text-anchor="end">750</text>
               <text x="40" y="14" font-size="10" fill="#555" text-anchor="end">1000</text>
-              <!-- Titolo Asse Y posizionato perfettamente al centro del margine sinistro (senza tagli o sovrapposizioni) -->
               <text x="14" y="90" font-size="11" fill="#333" text-anchor="middle" transform="rotate(-90 14,90)">Dislivello+ (m)</text>
               
-              <!-- Labels Asse X in KM -->
+              <!-- Labels Asse X -->
               <text x="99" y="185" font-size="10" fill="#555" text-anchor="middle">10</text>
               <text x="153" y="185" font-size="10" fill="#555" text-anchor="middle">20</text>
               <text x="206" y="185" font-size="10" fill="#555" text-anchor="middle">30</text>
@@ -258,7 +297,7 @@
       <div id="risultato-meteo-stato"></div>
       <div id="risultato-meteo">Nessun tracciato selezionato. Passa col mouse o clicca su un percorso per il meteo.</div>
 
-      <!-- Radar di Windy come da richiesta -->
+      <!-- Radar di Windy -->
       <a id="link-meteo-esterno" href="#" target="_blank" class="ext-link" style="margin-top: 10px; border-color:#3498db; background:#e1f0fa;">📡 Apri Radar Meteo (Windy) ↗</a>
 
       <div class="disclaimer-box">
@@ -277,6 +316,53 @@
 
   <button id="toggle-sidebar-btn">✖ Chiudi</button>
   <div id="map"></div>
+
+  <!-- Bottom Drawer con Grafico SVG -->
+  <div id="bottom-drawer">
+    <button id="drawer-toggle-btn">📊 Confronta Difficoltà</button>
+    
+    <div style="font-weight: bold; font-size: 0.85rem; color: #2c3e50; margin-bottom: 4px; display: flex; gap: 15px; align-items: center;">
+      <span>Posizionamento Percorsi Filtrati</span>
+      <span style="font-weight: normal; font-size: 0.75rem; color: #555;">
+        ● Completati &nbsp;|&nbsp; ■ Da Fare
+      </span>
+    </div>
+
+    <svg id="drawer-svg-chart" viewBox="0 0 500 210" width="100%" height="100%" style="overflow: visible;">
+      <!-- Assi -->
+      <line x1="50" y1="175" x2="470" y2="175" stroke="#aaa" stroke-width="1"/>
+      <line x1="50" y1="15" x2="50" y2="175" stroke="#aaa" stroke-width="1"/>
+      
+      <!-- Aree di Difficoltà -->
+      <polygon points="50,175 176,175 50,79" fill="rgba(0, 255, 102, 0.15)"/>
+      <polygon points="176,175 281,175 71,15 50,15 50,79" fill="rgba(0, 229, 255, 0.15)"/>
+      <polygon points="281,175 386,175 176,15 71,15" fill="rgba(255, 95, 0, 0.15)"/>
+      <polygon points="386,175 470,175 470,15 176,15" fill="rgba(255, 0, 127, 0.15)"/>
+      
+      <!-- Linee di demarcazione (Score 12, 22, 32) -->
+      <line x1="50" y1="79" x2="176" y2="175" stroke="#00FF66" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <line x1="71" y1="15" x2="281" y2="175" stroke="#00E5FF" stroke-width="1.5" stroke-dasharray="3,3"/>
+      <line x1="176" y1="15" x2="386" y2="175" stroke="#FF5F00" stroke-width="1.5" stroke-dasharray="3,3"/>
+      
+      <!-- Etichette Asse Y -->
+      <text x="42" y="179" font-size="9" fill="#666" text-anchor="end">0</text>
+      <text x="42" y="139" font-size="9" fill="#666" text-anchor="end">250</text>
+      <text x="42" y="99" font-size="9" fill="#666" text-anchor="end">500</text>
+      <text x="42" y="59" font-size="9" fill="#666" text-anchor="end">750</text>
+      <text x="42" y="19" font-size="9" fill="#666" text-anchor="end">1000</text>
+      <text x="15" y="95" font-size="10" fill="#333" text-anchor="middle" transform="rotate(-90 15,95)">Dislivello+ (m)</text>
+      
+      <!-- Etichette Asse X -->
+      <text x="155" y="190" font-size="9" fill="#666" text-anchor="middle">10</text>
+      <text x="260" y="190" font-size="9" fill="#666" text-anchor="middle">20</text>
+      <text x="365" y="190" font-size="9" fill="#666" text-anchor="middle">30</text>
+      <text x="470" y="190" font-size="9" fill="#666" text-anchor="middle">40</text>
+      <text x="260" y="204" font-size="10" fill="#333" text-anchor="middle">Distanza (km)</text>
+
+      <!-- Gruppo per i Punti Dinamici dei Tracciati -->
+      <g id="drawer-points"></g>
+    </svg>
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -343,23 +429,18 @@ function aggiornaLinkEsterni() {
   const lng = center.lng.toFixed(4);
   const zoom = map.getZoom();
   
-  // Preleviamo la data selezionata nell'input
   const dataSelezionata = document.getElementById('data-partenza').value;
-  // Creiamo il parametro tempo per Windy aggiungendo le ore 12:00 (es. 2026-08-20-12)
   const timeParam = dataSelezionata ? `${dataSelezionata}-12` : '';
   
   const linkWindy = document.getElementById('link-meteo-esterno');
-  // Modificato: Link in inglese (Rain, thunder) senza il percorso /it/
   linkWindy.href = `https://www.windy.com/-Rain-thunder-rain?rain,${lat},${lng},${zoom},${timeParam},p:cities`;
 
   const linkOA = document.getElementById('link-outdooractive');
-  // Modificato: Dominio .com e percorso in inglese (/en/) con i parametri ?map
   linkOA.href = `https://www.outdooractive.com/en/routes/?map=${zoom},${lat},${lng}`;
 
   const linkWiki = document.getElementById('link-wikiloc');
   const sw = bounds.getSouthWest();
   const ne = bounds.getNorthEast();
-  // Wikiloc usa già il .com nativamente
   linkWiki.href = `https://www.wikiloc.com/wikiloc/map.do?sw=${sw.lat.toFixed(4)},${sw.lng.toFixed(4)}&ne=${ne.lat.toFixed(4)},${ne.lng.toFixed(4)}`;
 }
 
@@ -768,6 +849,105 @@ fetch('percorsi.geojson?v=' + new Date().getTime())
     }
   })
   .catch(error => console.error('Error loading GeoJSON:', error));
+
+// --- Gestione Bottom Drawer e Grafico Dinamico ---
+const drawer = document.getElementById('bottom-drawer');
+const drawerToggleBtn = document.getElementById('drawer-toggle-btn');
+
+drawerToggleBtn.addEventListener('click', () => {
+  drawer.classList.toggle('open');
+  drawerToggleBtn.textContent = drawer.classList.contains('open') ? '✖ Chiudi Grafico' : '📊 Confronta Difficoltà';
+});
+
+function aggiornaGraficoDrawer() {
+  const containerPoints = document.getElementById('drawer-points');
+  if (!containerPoints || !geoJsonLayer) return;
+  containerPoints.innerHTML = ''; // Pulisce i punti precedenti
+
+  geoJsonLayer.eachLayer(layer => {
+    const p = layer.feature.properties;
+    const isFatta = p.stato === 'fatta';
+    
+    // Mappatura coordinate SVG (X: 0-40km -> 50-470px | Y: 0-1000m -> 175-15px)
+    const kmClamped = Math.min(Math.max(p.km || 0, 0), 40);
+    const dislClamped = Math.min(Math.max(p.dislivello || 0, 0), 1000);
+
+    const cx = 50 + (kmClamped / 40) * 420;
+    const cy = 175 - (dislClamped / 1000) * 160;
+    const color = getNeonColor(p.difficolta);
+
+    let element;
+
+    if (isFatta) {
+      // Pallino per i percorsi fatti
+      element = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      element.setAttribute("cx", cx);
+      element.setAttribute("cy", cy);
+      element.setAttribute("r", 5.5);
+    } else {
+      // Quadrato per i percorsi da fare
+      element = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      element.setAttribute("x", cx - 5);
+      element.setAttribute("y", cy - 5);
+      element.setAttribute("width", 10);
+      element.setAttribute("height", 10);
+      element.setAttribute("rx", 1); // Angoli leggermente smussati
+    }
+
+    element.setAttribute("fill", color);
+    element.setAttribute("stroke", "#1e293b");
+    element.setAttribute("stroke-width", "1.5");
+    element.setAttribute("style", "cursor: pointer; transition: transform 0.15s;");
+
+    // HOVER: Vola sul percorso nella mappa e apri il popup nativo
+    element.addEventListener('mouseenter', () => {
+      // Ingrandisci forma nel grafico
+      if (isFatta) {
+        element.setAttribute("r", 8.5);
+      } else {
+        element.setAttribute("x", cx - 7);
+        element.setAttribute("y", cy - 7);
+        element.setAttribute("width", 14);
+        element.setAttribute("height", 14);
+      }
+      element.setAttribute("stroke-width", "2.5");
+
+      // Spessisci linea tracciato in mappa
+      layer.setStyle({ weight: 8, opacity: 1 });
+
+      // Centra mappa sul tracciato e apri popup nativo
+      if (layer.getBounds && layer.getBounds().isValid()) {
+        map.fitBounds(layer.getBounds(), { padding: [50, 50] });
+      }
+      layer.openPopup();
+      selectedLayerForMeteo = layer;
+    });
+
+    element.addEventListener('mouseleave', () => {
+      // Ripristina forma normale
+      if (isFatta) {
+        element.setAttribute("r", 5.5);
+      } else {
+        element.setAttribute("x", cx - 5);
+        element.setAttribute("y", cy - 5);
+        element.setAttribute("width", 10);
+        element.setAttribute("height", 10);
+      }
+      element.setAttribute("stroke-width", "1.5");
+
+      layer.setStyle({ weight: isFatta ? 4 : 5, opacity: 0.95 });
+    });
+
+    containerPoints.appendChild(element);
+  });
+}
+
+// Inseriamo l'aggiornamento automatico del grafico quando si applicano i filtri
+const originalApplyFilters = applyFilters;
+applyFilters = function(isUserEvent) {
+  originalApplyFilters(isUserEvent);
+  aggiornaGraficoDrawer();
+};
 </script>
 </body>
 </html>
