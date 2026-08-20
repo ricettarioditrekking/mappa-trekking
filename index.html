@@ -149,40 +149,41 @@
             <div class="tooltip-formula">Score = Distanza (km) + 2 × <span style="white-space:nowrap">(Dislivello+ (m) / 100)</span></div>
             
             <svg class="tooltip-chart" viewBox="0 0 270 205" width="100%" height="auto">
-              <!-- Assi -->
-              <line x1="30" y1="170" x2="260" y2="170" stroke="#aaa" stroke-width="1"/>
-              <line x1="30" y1="10" x2="30" y2="170" stroke="#aaa" stroke-width="1"/>
+              <!-- Assi (spostati a x=45 per lasciare spazio a sinistra) -->
+              <line x1="45" y1="170" x2="260" y2="170" stroke="#aaa" stroke-width="1"/>
+              <line x1="45" y1="10" x2="45" y2="170" stroke="#aaa" stroke-width="1"/>
               
-              <!-- Aree di Difficoltà con peso 2 sulla salita -->
-              <polygon points="30,170 96,170 30,74" fill="rgba(0, 255, 102, 0.2)"/>
-              <polygon points="96,170 151,170 41,10 30,10 30,74" fill="rgba(0, 229, 255, 0.2)"/>
-              <polygon points="151,170 206,170 96,10 41,10" fill="rgba(255, 95, 0, 0.2)"/>
-              <polygon points="206,170 250,170 250,10 96,10" fill="rgba(255, 0, 127, 0.2)"/>
+              <!-- Aree di Difficoltà ricalcolate sul nuovo asse -->
+              <polygon points="45,170 110,170 45,74" fill="rgba(0, 255, 102, 0.2)"/>
+              <polygon points="110,170 163,170 56,10 45,10 45,74" fill="rgba(0, 229, 255, 0.2)"/>
+              <polygon points="163,170 217,170 110,10 56,10" fill="rgba(255, 95, 0, 0.2)"/>
+              <polygon points="217,170 260,170 260,10 110,10" fill="rgba(255, 0, 127, 0.2)"/>
               
               <!-- Linee di demarcazione (Score 12, 22, 32) -->
-              <line x1="30" y1="74" x2="96" y2="170" stroke="#00FF66" stroke-width="2"/>
-              <line x1="41" y1="10" x2="151" y2="170" stroke="#00E5FF" stroke-width="2"/>
-              <line x1="96" y1="10" x2="206" y2="170" stroke="#FF5F00" stroke-width="2"/>
+              <line x1="45" y1="74" x2="110" y2="170" stroke="#00FF66" stroke-width="2"/>
+              <line x1="56" y1="10" x2="163" y2="170" stroke="#00E5FF" stroke-width="2"/>
+              <line x1="110" y1="10" x2="217" y2="170" stroke="#FF5F00" stroke-width="2"/>
               
               <!-- Labels Asse Y in centinaia di metri -->
-              <text x="25" y="174" font-size="10" fill="#555" text-anchor="end">0</text>
-              <text x="25" y="134" font-size="10" fill="#555" text-anchor="end">250</text>
-              <text x="25" y="94" font-size="10" fill="#555" text-anchor="end">500</text>
-              <text x="25" y="54" font-size="10" fill="#555" text-anchor="end">750</text>
-              <text x="25" y="14" font-size="10" fill="#555" text-anchor="end">1000</text>
-              <text x="4" y="90" font-size="11" fill="#333" text-anchor="middle" transform="rotate(-90 4,90)">Dislivello+ (m)</text>
+              <text x="40" y="174" font-size="10" fill="#555" text-anchor="end">0</text>
+              <text x="40" y="134" font-size="10" fill="#555" text-anchor="end">250</text>
+              <text x="40" y="94" font-size="10" fill="#555" text-anchor="end">500</text>
+              <text x="40" y="54" font-size="10" fill="#555" text-anchor="end">750</text>
+              <text x="40" y="14" font-size="10" fill="#555" text-anchor="end">1000</text>
+              <!-- Titolo Asse Y posizionato perfettamente al centro del margine sinistro (senza tagli o sovrapposizioni) -->
+              <text x="14" y="90" font-size="11" fill="#333" text-anchor="middle" transform="rotate(-90 14,90)">Dislivello+ (m)</text>
               
               <!-- Labels Asse X in KM -->
-              <text x="85" y="185" font-size="10" fill="#555" text-anchor="middle">10</text>
-              <text x="140" y="185" font-size="10" fill="#555" text-anchor="middle">20</text>
-              <text x="195" y="185" font-size="10" fill="#555" text-anchor="middle">30</text>
-              <text x="250" y="185" font-size="10" fill="#555" text-anchor="middle">40</text>
-              <text x="140" y="200" font-size="11" fill="#333" text-anchor="middle">Distanza (km)</text>
+              <text x="99" y="185" font-size="10" fill="#555" text-anchor="middle">10</text>
+              <text x="153" y="185" font-size="10" fill="#555" text-anchor="middle">20</text>
+              <text x="206" y="185" font-size="10" fill="#555" text-anchor="middle">30</text>
+              <text x="260" y="185" font-size="10" fill="#555" text-anchor="middle">40</text>
+              <text x="152" y="200" font-size="11" fill="#333" text-anchor="middle">Distanza (km)</text>
               
               <!-- Etichette degli Effort Score -->
-              <text x="63" y="122" font-size="10" font-weight="bold" fill="#006622" transform="rotate(56 63,122)" text-anchor="middle">Score 12</text>
-              <text x="96" y="90" font-size="10" font-weight="bold" fill="#006677" transform="rotate(56 96,90)" text-anchor="middle">Score 22</text>
-              <text x="151" y="90" font-size="10" font-weight="bold" fill="#aa4400" transform="rotate(56 151,90)" text-anchor="middle">Score 32</text>
+              <text x="77" y="122" font-size="10" font-weight="bold" fill="#006622" transform="rotate(56 77,122)" text-anchor="middle">Score 12</text>
+              <text x="110" y="90" font-size="10" font-weight="bold" fill="#006677" transform="rotate(56 110,90)" text-anchor="middle">Score 22</text>
+              <text x="164" y="90" font-size="10" font-weight="bold" fill="#aa4400" transform="rotate(56 164,90)" text-anchor="middle">Score 32</text>
             </svg>
 
             <div style="font-size: 0.75rem; margin-top: 10px; line-height: 1.4;">
