@@ -349,15 +349,17 @@ function aggiornaLinkEsterni() {
   const timeParam = dataSelezionata ? `${dataSelezionata}-12` : '';
   
   const linkWindy = document.getElementById('link-meteo-esterno');
-  // Modificato: radar meteo in italiano con passaggio di coordinate, zoom e data/ora
-  linkWindy.href = `https://www.windy.com/it/-Radar-meteo-radar?radar,${lat},${lng},${zoom},${timeParam},p:cities`;
+  // Modificato: Link in inglese (Rain, thunder) senza il percorso /it/
+  linkWindy.href = `https://www.windy.com/-Rain-thunder-rain?rain,${lat},${lng},${zoom},${timeParam},p:cities`;
 
   const linkOA = document.getElementById('link-outdooractive');
-  linkOA.href = `https://www.outdooractive.com/en/routes/#center=${lat},${lng}&zoom=${zoom}`;
+  // Modificato: Dominio .com e percorso in inglese (/en/) con i parametri ?map
+  linkOA.href = `https://www.outdooractive.com/en/routes/?map=${zoom},${lat},${lng}`;
 
   const linkWiki = document.getElementById('link-wikiloc');
   const sw = bounds.getSouthWest();
   const ne = bounds.getNorthEast();
+  // Wikiloc usa già il .com nativamente
   linkWiki.href = `https://www.wikiloc.com/wikiloc/map.do?sw=${sw.lat.toFixed(4)},${sw.lng.toFixed(4)}&ne=${ne.lat.toFixed(4)},${ne.lng.toFixed(4)}`;
 }
 
