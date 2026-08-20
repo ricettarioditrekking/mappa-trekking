@@ -413,7 +413,7 @@ function onEachFeature(feature, layer) {
     'Distanza: ' + p.km + ' km<br>' +
     'Dislivello: +' + p.dislivello + 'm / -' + (p.dislivello_neg || 0) + 'm<br>' +
     'Tempo totale: ' + (p.tempo_effettivo || p.durata || '') + '<br>' +
-    'Difficoltà: ' + p.difficolta +
+    'Difficoltà: ' + p.difficolta + (p.sforzo !== undefined ? ' (' + p.sforzo + ')' : '') +
     `<details><summary>Maggiori dettagli</summary>` +
       `<div class="details-content">` +
         `<strong>Stato:</strong> ${isFatta ? 'Completato' : 'Da fare'}<br>` +
